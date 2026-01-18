@@ -1,0 +1,569 @@
+<!-- index_pl.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Self-stereotypes in Poland</title>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { display:flex; flex-direction:column; overflow:hidden; font-family: system-ui, Arial, sans-serif; background:#fafafa; color:#111; }
+
+    :root{
+      --text:#111;
+      --muted:#555;
+      --line:#e7e7e7;
+      --card:#fff;
+      --bg:#fafafa;
+      --shadow: 0 10px 30px rgba(0,0,0,0.07);
+      --radius: 14px;
+    }
+
+    #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
+    #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
+
+    #headerRow{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+    #titleBlock{ display:flex; flex-direction:column; gap:6px; }
+    #title{ font-size:18px; font-weight:700; margin:0; white-space:nowrap; }
+    #sub{ font-size:13px; color:#555; line-height:1.35; max-width:860px; }
+
+    #progressWrap{ display:flex; align-items:center; gap:10px; font-size:13px; white-space:nowrap; }
+    #progressBar{ width:220px; height:10px; }
+    #progressText{ font-size:13px; color:#333; }
+
+    .slide{ display:none; padding: 6px 0 0 0; }
+    .slide.active{ display:block; }
+
+    .card{
+      max-width: 980px;
+      margin: 4px auto 0 auto;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-sizing:border-box;
+      background:var(--card);
+      box-shadow: var(--shadow);
+    }
+    .centeredSlide .card{
+      max-width: 860px;
+      text-align:center;
+    }
+    .centeredSlide .h1{ font-size:28px; margin-bottom:10px; }
+    .centeredSlide .p{ font-size:17px; margin-bottom:14px; }
+    .centeredSlide .infoList{
+      max-width:720px;
+      margin:12px auto 0 auto;
+      text-align:left;
+      list-style-position:inside;
+    }
+    .centeredSlide .traitsGrid{
+      max-width:720px;
+      margin: 6px auto 0 auto;
+    }
+    .centeredSlide{
+      min-height: calc(100vh - 180px);
+      align-items:center;
+      justify-content:center;
+    }
+    .centeredSlide.active{
+      display:flex;
+    }
+
+    .h1{ font-size:22px; font-weight:700; margin:0 0 8px 0; color:#111; }
+    .p{ font-size:14px; color:var(--muted); margin:0 0 10px 0; line-height:1.5; }
+
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 760px){
+      .grid{ grid-template-columns: 1fr; }
+      #progressBar{ width:160px; }
+    }
+
+    label{ font-size:13px; color:#333; display:block; margin:0 0 6px 0; }
+    input[type="text"], input[type="number"], select{
+      width:100%;
+      padding:11px 12px;
+      border:1px solid #cfcfcf;
+      border-radius:10px;
+      font-size:14px;
+      box-sizing:border-box;
+      background:#fff;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus{
+      outline:none;
+      border-color:#111;
+      box-shadow:0 0 0 4px rgba(17,17,17,0.08);
+    }
+
+    .traitsGrid{ display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; gap:12px; }
+    @media (max-width: 760px){ .traitsGrid{ grid-template-columns: 1fr; } }
+
+    .traitRow{ display:flex; gap:12px; align-items:center; }
+    .traitNum{ width:24px; text-align:right; font-size:12px; color:#666; flex:0 0 auto; }
+
+    .btnRow{ display:flex; justify-content:center; gap:12px; margin: 14px 0 0 0; flex-wrap:wrap; }
+    button{
+      padding:10px 16px;
+      font-size:14px;
+      border:1px solid #cfcfcf;
+      border-radius:12px;
+      cursor:pointer;
+      background:#fff;
+      transition: transform .06s, box-shadow .15s, background .15s, border-color .15s;
+    }
+    button:hover{ box-shadow:0 8px 20px rgba(0,0,0,0.08); }
+    button:active{ transform: translateY(1px); }
+    button:disabled{ opacity:.55; cursor:not-allowed; box-shadow:none; }
+
+    .primary{ background:#111; color:#fff; border-color:#111; }
+    .primary:hover{ background:#000; border-color:#000; }
+    .ghost{ background:#fff; }
+
+    .error{ color:#b00020; font-size:13px; margin:10px 0 0 0; text-align:center; display:none; }
+
+    /* ===== Cover / consent slide look ===== */
+    #slideCoverConsent .card{
+      max-width: 980px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      box-shadow:none;
+      margin-top: 6px;
+    }
+    #slideCoverConsent .coverWrap{
+      position: relative;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 8px 0 0 0;
+    }
+    #slideCoverConsent .crestRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    #slideCoverConsent .umCrest{
+      width: 76px;
+      height: auto;
+    }
+    #slideCoverConsent .coverTitle{
+      text-align:center;
+      font-family:"Times New Roman", Times, Georgia, serif;
+      font-size:32px;
+      letter-spacing:1px;
+      margin: 14px 0 8px 0;
+      font-weight:500;
+      text-transform:uppercase;
+      color:#111;
+    }
+    #slideCoverConsent .crestText{
+      font-size:14px;
+      color:#333;
+      font-weight:600;
+    }
+    #slideCoverConsent .coverSub{
+      text-align:center;
+      font-size:13px;
+      color:#444;
+      margin:0 0 16px 0;
+      line-height:1.4;
+    }
+    #slideCoverConsent .coverCard{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      background:#fff;
+      box-shadow: var(--shadow);
+    }
+    #slideCoverConsent .coverCard{
+      font-family:"Times New Roman", Times, Georgia, serif;
+    }
+    #slideCoverConsent .consentHeader{
+      text-align:center;
+      font-style:italic;
+      margin-bottom:10px;
+      color:#111;
+    }
+    #slideCoverConsent .consentHeaderLine{ font-size:16px; }
+    #slideCoverConsent .consentBox{
+      border:1px solid #444;
+      padding:12px;
+    }
+    #slideCoverConsent .consentLabel{
+      font-weight:700;
+      font-size:14px;
+      margin-bottom:2px;
+    }
+    #slideCoverConsent .consentTitle{
+      font-weight:700;
+      font-size:16px;
+      margin-bottom:8px;
+    }
+    #slideCoverConsent .consentSection{
+      font-size:14px;
+      line-height:1.35;
+      margin-top:8px;
+    }
+    #slideCoverConsent .consentHeading{
+      font-weight:700;
+    }
+    #slideCoverConsent .consentList{
+      margin:6px 0 8px 18px;
+      font-size:14px;
+      line-height:1.35;
+    }
+    #slideCoverConsent .consentFooter{
+      margin-top:10px;
+      font-size:14px;
+      line-height:1.35;
+    }
+    #slideCoverConsent .consentThanks{
+      text-align:center;
+      font-style:italic;
+      margin-top:10px;
+    }
+    #slideCoverConsent .consentScroll{
+      max-height: 360px;
+      overflow:auto;
+      padding-right:8px;
+    }
+    .consentLook{
+      font-family:"Times New Roman", Times, Georgia, serif;
+    }
+    .demoList{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .demoRow label{ margin-bottom:6px; }
+    .demoRow input[type="text"], .demoRow input[type="number"]{ margin-top:6px; }
+    .demoInline{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-right:12px;
+      font-size:14px;
+      color:#333;
+    }
+    .demoLabel{
+      font-size:13px;
+      color:#333;
+      margin-right:8px;
+    }
+
+    .infoList{
+      margin: 10px 0 0 0;
+      padding-left: 18px;
+      color: #444;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .smallNote{ font-size:12px; color:#666; margin-top:8px; }
+
+    /* Map stage */
+    #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 10px 0 8px 0; line-height:1.15; }
+    #prompt strong{ font-weight:800; }
+
+    #buttonRow{ display:flex; justify-content:center; align-items:center; gap:12px; margin: 6px 0 4px 0; flex-wrap:wrap; }
+    #regionButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+    .btnN{ background:#1039c1; color:#fff; border-color:#1039c1; }
+    .btnS{ background:#d01212; color:#fff; border-color:#d01212; }
+    .btnE{ background:#eded35; color:#111; border-color:#c8c800; }
+    .btnW{ background:#35d40d; color:#111; border-color:#2db60b; }
+    .btnU{ background:#999; color:#fff; border-color:#999; }
+
+    #undoBtn{ background:#fff; }
+
+    #mapWrap{ position:relative; height:100%; max-width:1400px; margin:0 auto; }
+    #mapWrap svg{
+      width:100%;
+      height:100%;
+      display:block;
+      border:1px solid #ddd;
+      background:#fff;
+      position:relative;
+      z-index:1;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    #marker{
+      position:absolute;
+      z-index:10;
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      transform:translate(-50%,-50%);
+      display:none;
+      pointer-events:none;
+      background:rgba(255,50,120,0.95);
+      box-shadow:0 0 0 6px rgba(255,50,120,0.25);
+      animation:pulse 1.2s infinite;
+    }
+    @keyframes pulse{
+      0%{box-shadow:0 0 0 4px rgba(255,50,120,0.25);}
+      50%{box-shadow:0 0 0 10px rgba(255,50,120,0.1);}
+      100%{box-shadow:0 0 0 4px rgba(255,50,120,0.25);}
+    }
+  </style>
+</head>
+
+<body>
+  <div id="topbar">
+    <div id="headerRow">
+      <div id="titleBlock"></div>
+
+      <div id="progressWrap">
+        <progress id="progressBar" value="0" max="100"></progress>
+        <span id="progressText"></span>
+      </div>
+    </div>
+
+    <!-- SLIDE 0: COVER + CONSENT -->
+    <div class="slide active" id="slideCoverConsent">
+      <div class="card">
+        <div class="coverWrap">
+          <div class="crestRow">
+            <img class="umCrest" src="logo.png" alt="University crest" />
+            <div class="crestText">University of Malta</div>
+          </div>
+          <div class="coverTitle">Self-stereotypes in Poland</div>
+          <div class="coverSub">
+            Department of Cognitive Science, University of Malta<br/>
+            Researcher: Wiktoria Szot • Supervisor: Prof. Gordon Sammut<br/>
+            Contact: wiktoria.szot.24@um.edu.mt
+          </div>
+
+          <div class="coverCard">
+            <div class="consentScroll">
+              <div class="consentHeader">
+                <div class="consentHeaderLine">University of Malta</div>
+                <div class="consentHeaderLine">Faculty of Media and Knowledge Sciences</div>
+                <div class="consentHeaderLine">Department of Cognitive Science</div>
+              </div>
+
+              <div class="consentBox">
+                <div class="consentLabel">Informed Consent form for the research project:</div>
+                <div class="consentTitle">Between Nation and Europe: Framing Effects, Cognitive Flexibility, and Self-Stereotypes in Malta and Poland</div>
+
+                <div class="consentSection"><span class="consentHeading">Aim of the research:</span> This study examines how individuals understand and represent national and regional identities within Europe. Specifically, the research explores how people from different European countries mentally organize Europe into regions and how they describe the typical characteristics of their own national group. The findings will contribute to a better understanding of national self-stereotyping and identity representations in a European context.</div>
+
+                <div class="consentSection"><span class="consentHeading">Eligibility:</span> Participants must be aged 18 or older and hold Polish or Maltese nationality.</div>
+                <div class="consentSection"><span class="consentHeading">Procedure:</span> If you agree to participate in this study, you will be asked to complete the following tasks:</div>
+                <ul class="consentList">
+                  <li>You will be asked to describe the "typical" member of your own national group by generating a list of traits or characteristics that you associate with this group.</li>
+                  <li>You will be presented with a blank map of Europe and asked to divide European countries into regions (e.g., Northern) according to your own understanding.</li>
+                </ul>
+                <div class="consentSection">The study will be completed in a single session and is expected to take approximately 5-7 minutes.</div>
+
+                <div class="consentSection"><span class="consentHeading">Voluntary nature of the research:</span> Participation in this research is entirely voluntary. You may withdraw from the study at any time without providing a reason, and without any negative consequences.</div>
+
+                <div class="consentSection"><span class="consentHeading">Confidentiality:</span> All information collected during this study will remain confidential and be coded using a unique participant ID. The data will be stored in Google Sheets, used solely for research purposes, and may be reported in academic publications or presentations in aggregated form only. You have the right to request access to or deletion of your data in accordance with data protection regulations.</div>
+
+                <div class="consentSection"><span class="consentHeading">Risks and benefits for participants:</span> There are no risks associated with participating in this study. While there is no direct personal benefit from participation, your contribution will help advance scientific understanding of identity, stereotyping, and social perception in Europe.</div>
+              </div>
+
+              <div class="consentFooter">
+                <div class="consentHeading">Contact:</div>
+                <div>In case of additional questions, you can contact Wiktoria Szot (wiktoria.szot.24@um.edu.mt).</div>
+              </div>
+
+              <div class="consentFooter">
+                <div class="consentHeading">Consent</div>
+                <div>When you click the "Continue" button, you confirm that:</div>
+                <ul class="consentList">
+                  <li>You have read and understood the information provided above.</li>
+                  <li>You are at least 18 years old.</li>
+                  <li>You voluntarily agree to take part in this study.</li>
+                </ul>
+              </div>
+
+              <div class="consentThanks">Thanks for your participation!</div>
+            </div>
+
+            <div style="margin-top:12px;">
+              <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
+                <input id="consent" type="checkbox" style="margin-top:3px;">
+                <span style="font-size:14px; color:#333;">
+                  I confirm I am 18+ and I voluntarily consent to participate in this study.
+                </span>
+              </label>
+            </div>
+
+            <div class="btnRow">
+              <button class="primary" id="consentNext" type="button">Continue</button>
+            </div>
+
+            <div class="error" id="consentError"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 1: DEMOGRAPHICS -->
+    <div class="slide centeredSlide" id="slideDemographics">
+      <div class="card consentLook">
+        <div class="h1">Demographic Information</div>
+        <div class="p">Please answer the following:</div>
+
+        <div class="demoList">
+          <div class="demoRow">
+            <label for="age">Age</label>
+            <input id="age" type="number" min="18" max="120" placeholder="e.g., 24" />
+          </div>
+
+          <div class="demoRow">
+            <span class="demoLabel">Gender:</span>
+            <label class="demoInline">
+              <input id="genderMale" name="gender" type="radio" value="male" />
+              Male
+            </label>
+            <label class="demoInline">
+              <input id="genderFemale" name="gender" type="radio" value="female" />
+              Female
+            </label>
+          </div>
+
+          <div class="demoRow">
+            <label for="nationality">Nationality</label>
+            <input id="nationality" type="text" placeholder="e.g., Polish" />
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button class="ghost" id="demoBack" type="button">Back</button>
+          <button class="primary" id="demoNext" type="button">Continue</button>
+        </div>
+
+        <div class="error" id="demoError"></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: INSTRUCTIONS POS -->
+    <div class="slide centeredSlide" id="slideInstrPos">
+      <div class="card">
+        <div class="h1">Positive traits</div>
+        <div class="p">
+          Please list <strong>8 POSITIVE traits</strong> you associate with Polish people.
+        </div>
+        <ul class="infoList">
+          <li>Use single words or short phrases.</li>
+          <li>There are no right or wrong answers.</li>
+          <li>Please respond based on your first impression. </li>
+        </ul>
+        <div class="btnRow">
+          <button class="ghost" id="instrPosBack" type="button">Back</button>
+          <button class="primary" id="instrPosNext" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: POSITIVE TRAITS -->
+    <div class="slide centeredSlide" id="slidePos">
+      <div class="card">
+        <div class="h1">Describe Polish people</div>
+        <div class="p">Please enter <strong>8 positive traits</strong> (one per box). Use single words or short phrases.</div>
+        <div class="traitsGrid" id="posTraitsGrid"></div>
+
+        <div class="btnRow">
+          <button class="ghost" id="posBack" type="button">Back</button>
+          <button class="primary" id="posNext" type="button">Next</button>
+        </div>
+
+        <div class="error" id="posError">Please fill in all 8 positive traits.</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: INSTRUCTIONS NEG -->
+    <div class="slide centeredSlide" id="slideInstrNeg">
+      <div class="card">
+        <div class="h1">Negative traits</div>
+        <div class="p">
+          Please list <strong>8 NEGATIVE traits</strong> you associate with Polish people.
+        </div>
+        <ul class="infoList">
+          <li>Use single words or short phrases.</li>
+          <li>There are no right or wrong answers.</li>
+          <li>Please respond based on your first impression.</li>
+        </ul>
+        <div class="btnRow">
+          <button class="ghost" id="instrNegBack" type="button">Back</button>
+          <button class="primary" id="instrNegNext" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: NEGATIVE TRAITS -->
+    <div class="slide centeredSlide" id="slideNeg">
+      <div class="card">
+        <div class="h1">Describe Polish people</div>
+        <div class="p">Please enter <strong>8 negative traits</strong> (one per box). Use single words or short phrases.</div>
+        <div class="traitsGrid" id="negTraitsGrid"></div>
+
+        <div class="btnRow">
+          <button class="ghost" id="negBack" type="button">Back</button>
+          <button class="primary" id="negNext" type="button">Next</button>
+        </div>
+
+        <div class="error" id="negError">Please fill in all 8 negative traits.</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: INSTRUCTIONS MAP -->
+    <div class="slide centeredSlide" id="slideInstrMap">
+      <div class="card">
+        <div class="h1">Categorize countries</div>
+        <div class="p">
+          You will see a map of Europe, and your task is to divide countries into regions: <strong>North</strong>, <strong>South</strong>, <strong>East</strong>, or <strong>West</strong>. A pulsing point will indicate the country you need to categorize.
+        </div>
+        <ul class="infoList">
+          <li>There are no correct answers — use your own judgement.</li>
+          <li>You can use <strong>Undo</strong> to change your previous answer.</li>
+          <li>A progress indicator will show how far you are.</li>
+        </ul>
+        <div class="btnRow">
+          <button class="ghost" id="instrMapBack" type="button">Back</button>
+          <button class="primary" id="instrMapNext" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: MAP -->
+    <div class="slide" id="slideMapTop">
+      <div id="prompt"></div>
+
+      <div id="buttonRow">
+        <div id="regionButtons">
+          <button class="btnN" data-region="N" type="button">North</button>
+          <button class="btnS" data-region="S" type="button">South</button>
+          <button class="btnE" data-region="E" type="button">East</button>
+          <button class="btnW" data-region="W" type="button">West</button>
+        </div>
+
+        <button id="undoBtn" type="button">Undo</button>
+      </div>
+
+      <input type="hidden" id="mapData" value="">
+    </div>
+
+    <!-- SLIDE 8: DEBRIEF -->
+    <div class="slide centeredSlide" id="slideDebrief">
+      <div class="card">
+        <div class="h1">Data saved</div>
+        <div class="p">Data saved, thank you for your participation!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="content">
+    <div id="mapWrap">
+      <div id="marker" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>window.SAMPLE = "PL";</script>
+  <script src="main.js"></script>
+</body>
+</html>
