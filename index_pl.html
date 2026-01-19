@@ -21,11 +21,13 @@
     }
 
     #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
-   @media (max-width: 760px){
-  #topbar{ overflow:visible; }
-  #slideCoverConsent .consentScroll{ max-height: 60vh; }  /* instead of 300px */
-  #slideCoverConsent .btnRow{ position: sticky; bottom: 0; background:#fff; padding-top:10px; }
-}
+
+    /* Mobile fix: consent fits + button stays visible */
+    @media (max-width: 760px){
+      #topbar{ overflow:visible; }
+      #slideCoverConsent .consentScroll{ max-height: 60vh; } /* instead of 300px */
+      #slideCoverConsent .btnRow{ position: sticky; bottom: 0; background:#fff; padding-top:10px; }
+    }
 
     #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
 
@@ -102,8 +104,12 @@
       box-shadow:0 0 0 4px rgba(17,17,17,0.08);
     }
 
-    .traitsGrid{ display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; gap:12px; }
-    @media (max-width: 760px){ .traitsGrid{ grid-template-columns: 1fr; } }
+    /* ✅ FIX: traits are ONE column (8 rows) everywhere */
+    .traitsGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
 
     .traitRow{ display:flex; gap:12px; align-items:center; }
     .traitNum{ width:24px; text-align:right; font-size:12px; color:#666; flex:0 0 auto; }
@@ -573,5 +579,3 @@
   <script src="main.js"></script>
 </body>
 </html>
-
-
