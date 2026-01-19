@@ -22,6 +22,14 @@
     }
 
     #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
+
+    /* Mobile fix: slide 0/other slides inside #topbar must be scrollable */
+@media (max-width: 760px){
+  body{ overflow:auto; }                 /* allow page scrolling */
+  #topbar{ overflow:auto; -webkit-overflow-scrolling: touch; }
+  #content{ overflow:visible; }
+}
+
     #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
 
     #headerRow{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
@@ -568,3 +576,4 @@
   <script src="main.js"></script>
 </body>
 </html>
+
