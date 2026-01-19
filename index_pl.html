@@ -591,11 +591,15 @@
     </div>
   </div>
 
-  <script>window.SAMPLE = "PL";</script>
-<script defer src="/main.js"></script>
+<script>window.SAMPLE = "PL";</script>
+<script>
+  document.getElementById("jsBadge").textContent = "JS badge: about to load main.js…";
+</script>
+<script defer src="./main.js?v=2026-01-19"></script>
 
 </body>
 </html>
+
 
 
 
