@@ -23,14 +23,26 @@
     #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
 
     /* Mobile fix: consent fits + button stays visible */
-    @media (max-width: 760px){
-  /* allow scrolling for the slides container */
+  @media (max-width: 760px){
+  /* make the slide area scrollable on phones */
+  body{ overflow:auto; }
   #topbar{
     max-height: 100vh;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* let the consent text grow naturally */
+  #slideCoverConsent .consentScroll{
+    max-height: none;
+  }
+
+  /* IMPORTANT: sticky breaks inside scrolling containers on mobile */
+  #slideCoverConsent .btnRow{
+    position: static;
+  }
 }
+
 
 
     #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
@@ -583,4 +595,5 @@
   <script src="main.js"></script>
 </body>
 </html>
+
 
