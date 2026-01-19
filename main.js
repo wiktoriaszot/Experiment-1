@@ -1,3 +1,8 @@
+(() => {
+  const b = document.getElementById("jsBadge");
+  if (b) b.textContent = "JS badge: main.js started ✅";
+})();
+
 window.addEventListener("error", (e) => console.error("JS error:", e.message));
 
 /* ===== CONFIG ===== */
@@ -559,5 +564,6 @@ function applySampleText() {
     goNext();
   };
 })();
+
 
 
