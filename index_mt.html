@@ -22,33 +22,15 @@
 
     #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
 
-    /* Mobile fix: consent fits + button stays visible */
-  @media (max-width: 760px){
-  /* allow the consent card to fit within the screen */
-  #slideCoverConsent .coverCard{
-    max-height: calc(100vh - 140px);
+   @media (max-width: 760px){
+  /* allow scrolling for the slides container */
+  #topbar{
+    max-height: 100vh;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* let the text area take remaining space and scroll */
-  #slideCoverConsent .consentScroll{
-    max-height: none;          /* remove the old cap */
-    overflow: visible;         /* scrolling is handled by .coverCard now */
-    flex: 1 1 auto;
-  }
-
-  /* keep checkbox + Continue visible at the bottom */
-  #slideCoverConsent .btnRow{
-    position: sticky;
-    bottom: 0;
-    background: #fff;
-    padding-top: 10px;
-    margin-top: 10px;
   }
 }
+
 
     #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
 
@@ -451,4 +433,5 @@
   <script src="main.js"></script>
 </body>
 </html>
+
 
