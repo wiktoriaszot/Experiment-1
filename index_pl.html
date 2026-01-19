@@ -24,10 +24,14 @@
 
     /* Mobile fix: consent fits + button stays visible */
     @media (max-width: 760px){
-      #topbar{ overflow:visible; }
-      #slideCoverConsent .consentScroll{ max-height: 60vh; } /* instead of 300px */
-      #slideCoverConsent .btnRow{ position: sticky; bottom: 0; background:#fff; padding-top:10px; }
-    }
+  /* allow scrolling for the slides container */
+  #topbar{
+    max-height: 100vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 
     #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
 
@@ -579,3 +583,4 @@
   <script src="main.js"></script>
 </body>
 </html>
+
