@@ -151,8 +151,17 @@ function setSlide(i) {
   // progress ONLY on map slide
   if (progressWrap) progressWrap.style.display = (i === 7) ? "flex" : "none";
 
+  // ✅ mobile: allow scrolling for long slides, lock scrolling on map
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    document.body.style.overflow = (i === 7) ? "hidden" : "auto";
+    const topbar = document.getElementById("topbar");
+    if (topbar) topbar.style.overflow = (i === 7) ? "visible" : "auto";
+    if (topbar) topbar.style.maxHeight = (i === 7) ? "" : "100vh";
+  }
+
   updateProgress();
 }
+
 
 function updateProgress() {
   if (currentSlideIndex !== 7) {
@@ -532,3 +541,4 @@ function applySampleText() {
     goNext();
   };
 })();
+
