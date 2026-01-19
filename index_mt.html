@@ -575,11 +575,17 @@
     </div>
   </div>
 
-  <script>window.SAMPLE = "MT";</script>
-<script defer src="/main.js"></script>
+ <script>window.SAMPLE = "MT";</script>
+<script>
+  // show that SAMPLE is set before main.js loads
+  document.getElementById("jsBadge").textContent = "JS badge: about to load main.js…";
+</script>
+<script defer src="./main.js?v=2026-01-19"></script>
+
 
 </body>
 </html>
+
 
 
 
