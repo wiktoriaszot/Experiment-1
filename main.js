@@ -7,6 +7,24 @@ const SAVE_URL =
 const SAMPLE =
   (String(window.SAMPLE || "PL")).toUpperCase() === "MT" ? "MT" : "PL";
 
+<div id="jsBadge"
+     style="position:fixed;left:10px;bottom:10px;z-index:99999;
+            background:#ff0;padding:6px 10px;border:1px solid #000;
+            border-radius:8px;font:12px system-ui;color:#000;">
+  JS badge: HTML loaded
+</div>
+
+<script>
+  // Inline JS check
+  const b = document.getElementById("jsBadge");
+  b.textContent = "JS badge: inline JS runs ✅";
+
+  // Check if the consent button exists
+  const btn = document.getElementById("consentNext");
+  if (!btn) b.textContent = "JS badge: consentNext NOT FOUND ❌";
+</script>
+
+
 /* ===== MAP CONSTANTS ===== */
 const EUROPE = [
   "FRA","BEL","DEU","CHE","ITA","MLT","ESP","PRT","GBR","IRL","NLD",
@@ -541,4 +559,5 @@ function applySampleText() {
     goNext();
   };
 })();
+
 
