@@ -6,10 +6,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Self-stereotypes in Malta</title>
 
-  <!-- Identical CSS/structure to PL version for consistency -->
   <style>
     html, body { height: 100%; margin: 0; }
-    body { display:flex; flex-direction:column; overflow:hidden; font-family: system-ui, Arial, sans-serif; background:#fafafa; color:#111; }
+
+    /* IMPORTANT CHANGE:
+       allow vertical scrolling so the Continue button is always reachable
+       (short screens / high zoom / OS scaling) */
+    body{
+      display:flex;
+      flex-direction:column;
+      overflow-x:hidden;
+      overflow-y:auto;
+      font-family: system-ui, Arial, sans-serif;
+      background:#fafafa;
+      color:#111;
+    }
 
     :root{
       --text:#111;
@@ -79,7 +90,6 @@
       .grid{ grid-template-columns: 1fr; }
       #progressBar{ width:160px; }
 
-      body{ overflow:auto; }
       #topbar{
         max-height: 100vh;
         overflow: auto;
@@ -183,8 +193,6 @@
       padding:18px;
       background:#fff;
       box-shadow: var(--shadow);
-    }
-    #slideCoverConsent .coverCard{
       font-family:"Times New Roman", Times, Georgia, serif;
     }
     #slideCoverConsent .consentHeader{
@@ -231,11 +239,15 @@
       font-style:italic;
       margin-top:10px;
     }
+
+    /* IMPORTANT CHANGE:
+       adaptive height + we will put checkbox + button inside this scroll area */
     #slideCoverConsent .consentScroll{
-      max-height: 300px;
+      max-height: min(70vh, 520px);
       overflow:auto;
       padding-right:8px;
     }
+
     .consentLook{
       font-family:"Times New Roman", Times, Georgia, serif;
     }
@@ -345,6 +357,7 @@
           </div>
 
           <div class="coverCard">
+            <!-- ONE scroll area that contains EVERYTHING, including checkbox + button -->
             <div class="consentScroll">
               <div class="consentHeader">
                 <div class="consentHeaderLine">University of Malta</div>
@@ -389,22 +402,22 @@
               </div>
 
               <div class="consentThanks">Thanks for your participation!</div>
-            </div>
 
-            <div style="margin-top:12px;">
-              <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
-                <input id="consent" type="checkbox" style="margin-top:3px;">
-                <span style="font-size:14px; color:#333;">
-                  I confirm I am 18+ and I voluntarily consent to participate in this study.
-                </span>
-              </label>
-            </div>
+              <div style="margin-top:12px;">
+                <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
+                  <input id="consent" type="checkbox" style="margin-top:3px;">
+                  <span style="font-size:14px; color:#333;">
+                    I confirm I am 18+ and I voluntarily consent to participate in this study.
+                  </span>
+                </label>
+              </div>
 
-            <div class="btnRow">
-              <button class="primary" id="consentNext" type="button">Continue</button>
-            </div>
+              <div class="btnRow">
+                <button class="primary" id="consentNext" type="button">Continue</button>
+              </div>
 
-            <div class="error" id="consentError"></div>
+              <div class="error" id="consentError"></div>
+            </div>
           </div>
         </div>
       </div>
