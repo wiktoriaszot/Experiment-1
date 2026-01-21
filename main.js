@@ -351,10 +351,10 @@ function setPrompt() {
   const label = needsThe ? `the ${name}` : name;
 
   if (phase === "axis") {
-    promptEl.innerHTML = `Which dimension fits <strong>${label}</strong> best?`;
+    promptEl.innerHTML = `<strong>${label}</strong>?`;
   } else {
     const dim = (chosenAxis === "NS") ? "North–South" : "East–West";
-    promptEl.innerHTML = `On <strong>${dim}</strong>, where does <strong>${label}</strong> belong?`;
+    promptEl.innerHTML = `<strong>${dim}</strong><strong>${label}</strong>?`;
   }
 }
 
@@ -662,3 +662,4 @@ function applySampleText() {
     goNext();
   };
 })();
+
