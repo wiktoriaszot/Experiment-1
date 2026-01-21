@@ -9,9 +9,6 @@
   <style>
     html, body { height: 100%; margin: 0; }
 
-    /* IMPORTANT CHANGE:
-       allow the page to scroll vertically so the Continue button is always reachable,
-       even on short screens / high zoom / OS scaling */
     body{
       display:flex;
       flex-direction:column;
@@ -78,15 +75,12 @@
       align-items:center;
       justify-content:center;
     }
-    .centeredSlide.active{
-      display:flex;
-    }
+    .centeredSlide.active{ display:flex; }
 
     .h1{ font-size:22px; font-weight:700; margin:0 0 8px 0; color:#111; }
     .p{ font-size:14px; color:var(--muted); margin:0 0 10px 0; line-height:1.5; }
 
     .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-
     @media (max-width: 760px){
       .grid{ grid-template-columns: 1fr; }
       #progressBar{ width:160px; }
@@ -117,7 +111,13 @@
       box-shadow:0 0 0 4px rgba(17,17,17,0.08);
     }
 
-    .traitsGrid{ display:grid; grid-template-columns: 1fr; grid-template-rows: repeat(8, auto); grid-auto-flow: row; gap:12px; }
+    .traitsGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(8, auto);
+      grid-auto-flow: row;
+      gap:12px;
+    }
 
     .traitRow{ display:flex; gap:12px; align-items:center; }
     .traitNum{ width:24px; text-align:right; font-size:12px; color:#666; flex:0 0 auto; }
@@ -142,7 +142,7 @@
 
     .error{ color:#b00020; font-size:13px; margin:10px 0 0 0; text-align:center; display:none; }
 
-    /* ===== Cover / consent slide look ===== */
+    /* Cover */
     #slideCoverConsent .card{
       max-width: 980px;
       border: none;
@@ -222,9 +222,7 @@
       line-height:1.35;
       margin-top:8px;
     }
-    #slideCoverConsent .consentHeading{
-      font-weight:700;
-    }
+    #slideCoverConsent .consentHeading{ font-weight:700; }
     #slideCoverConsent .consentList{
       margin:6px 0 8px 18px;
       font-size:14px;
@@ -240,23 +238,14 @@
       font-style:italic;
       margin-top:10px;
     }
-
-    /* IMPORTANT CHANGE:
-       make the scroll area adapt to viewport height and include checkbox + button inside */
     #slideCoverConsent .consentScroll{
       max-height: min(70vh, 520px);
       overflow:auto;
       padding-right:8px;
     }
 
-    .consentLook{
-      font-family:"Times New Roman", Times, Georgia, serif;
-    }
-    .demoList{
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-    }
+    .consentLook{ font-family:"Times New Roman", Times, Georgia, serif; }
+    .demoList{ display:flex; flex-direction:column; gap:16px; }
     .demoRow label{ margin-bottom:6px; }
     .demoRow input[type="text"], .demoRow input[type="number"]{ margin-top:6px; }
     .demoInline{
@@ -267,11 +256,7 @@
       font-size:14px;
       color:#333;
     }
-    .demoLabel{
-      font-size:13px;
-      color:#333;
-      margin-right:8px;
-    }
+    .demoLabel{ font-size:13px; color:#333; margin-right:8px; }
 
     .infoList{
       margin: 10px 0 0 0;
@@ -288,6 +273,7 @@
 
     #buttonRow{ display:flex; justify-content:center; align-items:center; gap:12px; margin: 6px 0 4px 0; flex-wrap:wrap; }
     #regionButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+    #axisButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
     .btnN{ background:#1039c1; color:#fff; border-color:#1039c1; }
     .btnS{ background:#d01212; color:#fff; border-color:#d01212; }
@@ -358,7 +344,6 @@
           </div>
 
           <div class="coverCard">
-            <!-- ONE scroll area that contains EVERYTHING, including checkbox + button -->
             <div class="consentScroll">
               <div class="consentHeader">
                 <div class="consentHeaderLine">University of Malta</div>
@@ -370,15 +355,18 @@
                 <div class="consentLabel">Informed Consent form for the research project:</div>
                 <div class="consentTitle">Between Nation and Europe: Framing Effects, Cognitive Flexibility, and Self-Stereotypes in Malta and Poland</div>
 
-                <div class="consentSection"><span class="consentHeading">Aim of the research:</span> This study examines how individuals understand and represent national and regional identities within Europe. Specifically, the research explores how people from different European countries mentally organize Europe into regions and how they describe the typical characteristics of their own national group. The findings will contribute to a better understanding of national self-stereotyping and identity representations in a European context.</div>
+                <div class="consentSection">
+                  <span class="consentHeading">Aim of the research:</span>
+                  This study examines how individuals understand and represent national and regional identities within Europe. Specifically, the research explores how people from different European countries mentally organize Europe into regions and how they describe the typical characteristics of their own national group.
+                </div>
 
                 <div class="consentSection"><span class="consentHeading">Eligibility:</span> Participants must be aged 18 or older and hold Polish or Maltese nationality.</div>
                 <div class="consentSection"><span class="consentHeading">Procedure:</span> If you agree to participate in this study, you will be asked to complete the following tasks:</div>
                 <ul class="consentList">
-                  <li>You will be asked to describe the "typical" member of your own national group by generating a list of traits or characteristics that you associate with this group.</li>
-                  <li>You will be presented with a blank map of Europe and asked to divide European countries into regions (e.g., Northern) according to your own understanding.</li>
+                  <li>You will be asked to describe the "typical" member of your own national group by generating a list of traits or characteristics (up to 8 positive and up to 8 negative).</li>
+                  <li>You will be presented with a map of Europe and asked to categorize European countries using your own judgement.</li>
                 </ul>
-                <div class="consentSection">The study will be completed in a single session and is expected to take approximately 5-7 minutes.</div>
+                <div class="consentSection">The study will be completed in a single session and is expected to take approximately 5–7 minutes.</div>
 
                 <div class="consentSection"><span class="consentHeading">Voluntary nature of the research:</span> Participation in this research is entirely voluntary. You may withdraw from the study at any time without providing a reason, and without any negative consequences.</div>
 
@@ -468,12 +456,13 @@
       <div class="card">
         <div class="h1">Positive traits</div>
         <div class="p">
-          Please list <strong>8 POSITIVE traits</strong> you associate with Polish people.
+          Please list <strong>up to 8 POSITIVE traits</strong> you associate with Polish people.
         </div>
         <ul class="infoList">
           <li>Use single words or short phrases.</li>
+          <li>You can leave boxes empty if you cannot think of more.</li>
           <li>There are no right or wrong answers.</li>
-          <li>Please respond based on your first impression. </li>
+          <li>Please respond based on your first impression.</li>
         </ul>
         <div class="btnRow">
           <button class="ghost" id="instrPosBack" type="button">Back</button>
@@ -486,7 +475,7 @@
     <div class="slide centeredSlide" id="slidePos">
       <div class="card">
         <div class="h1">Describe Polish people</div>
-        <div class="p">Please enter <strong>8 positive traits</strong> (one per box). Use single words or short phrases.</div>
+        <div class="p">Please enter <strong>up to 8 positive traits</strong> (single words or short phrases). You may leave blanks.</div>
         <div class="traitsGrid" id="posTraitsGrid"></div>
 
         <div class="btnRow">
@@ -494,7 +483,7 @@
           <button class="primary" id="posNext" type="button">Next</button>
         </div>
 
-        <div class="error" id="posError">Please fill in all 8 positive traits.</div>
+        <div class="error" id="posError"></div>
       </div>
     </div>
 
@@ -503,10 +492,11 @@
       <div class="card">
         <div class="h1">Negative traits</div>
         <div class="p">
-          Please list <strong>8 NEGATIVE traits</strong> you associate with Polish people.
+          Please list <strong>up to 8 NEGATIVE traits</strong> you associate with Polish people.
         </div>
         <ul class="infoList">
           <li>Use single words or short phrases.</li>
+          <li>You can leave boxes empty if you cannot think of more.</li>
           <li>There are no right or wrong answers.</li>
           <li>Please respond based on your first impression.</li>
         </ul>
@@ -521,7 +511,7 @@
     <div class="slide centeredSlide" id="slideNeg">
       <div class="card">
         <div class="h1">Describe Polish people</div>
-        <div class="p">Please enter <strong>8 negative traits</strong> (one per box). Use single words or short phrases.</div>
+        <div class="p">Please enter <strong>up to 8 negative traits</strong> (single words or short phrases). You may leave blanks.</div>
         <div class="traitsGrid" id="negTraitsGrid"></div>
 
         <div class="btnRow">
@@ -529,7 +519,7 @@
           <button class="primary" id="negNext" type="button">Next</button>
         </div>
 
-        <div class="error" id="negError">Please fill in all 8 negative traits.</div>
+        <div class="error" id="negError"></div>
       </div>
     </div>
 
@@ -538,10 +528,11 @@
       <div class="card">
         <div class="h1">Categorize countries</div>
         <div class="p">
-          You will see a map of Europe, and your task is to divide countries into regions: <strong>North</strong>, <strong>South</strong>, <strong>East</strong>, or <strong>West</strong>. A pulsing point will indicate the country you need to categorize.
+          You will see a map of Europe. For each country, first choose which dimension fits best (<strong>North–South</strong> or <strong>East–West</strong>), and then choose the side on that dimension. You can also select <strong>Unsure</strong>.
         </div>
         <ul class="infoList">
           <li>There are no correct answers — use your own judgement.</li>
+          <li>Try to judge each country independently.</li>
           <li>You can use <strong>Undo</strong> to change your previous answer.</li>
           <li>A progress indicator will show how far you are.</li>
         </ul>
@@ -557,6 +548,12 @@
       <div id="prompt"></div>
 
       <div id="buttonRow">
+        <div id="axisButtons">
+          <button class="ghost" data-axis="NS" type="button">North–South</button>
+          <button class="ghost" data-axis="EW" type="button">East–West</button>
+          <button class="btnU" data-axis="U" type="button">Unsure</button>
+        </div>
+
         <div id="regionButtons">
           <button class="btnN" data-region="N" type="button">North</button>
           <button class="btnS" data-region="S" type="button">South</button>
