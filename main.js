@@ -1,3 +1,4 @@
+// main.js
 window.addEventListener("error", (e) => console.error("JS error:", e.message));
 
 /* ===== CONFIG ===== */
@@ -29,6 +30,16 @@ const COUNTRY_NAME = {
 
 const REGION_COLOR = { N:"#1039c1", S:"#d01212", E:"#eded35", W:"#35d40d", U:"#999" };
 const DEFAULT_COLOR = "#c9c9c9";
+
+/* ===== HELPERS ===== */
+function shuffleCopy(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 /* ===== DOM ===== */
 const slideCoverConsent = document.getElementById("slideCoverConsent");
@@ -99,6 +110,9 @@ const markerEl = document.getElementById("marker");
 const mapDataEl = document.getElementById("mapData");
 const contentEl = document.getElementById("content");
 
+const axisButtons = document.getElementById("axisButtons");
+const regionButtons = document.getElementById("regionButtons");
+
 /* ===== PARTICIPANT ID ===== */
 const startedAtISO = new Date().toISOString();
 const participantId = getOrCreateParticipantId();
@@ -134,10 +148,14 @@ const study = {
   demographics: { age: null, gender: "", nationality: "", residence: "" },
   traits: {
     target: (SAMPLE === "MT") ? "typical_maltese" : "typical_pole",
-    positive: { items: [], rtMs: null },
-    negative: { items: [], rtMs: null }
+    positive: { items: [], rtMs: null, count: 0 },
+    negative: { items: [], rtMs: null, count: 0 }
   },
-  map: { order: EUROPE, responses: {}, rtMs: {} }
+  map: {
+    order: shuffleCopy(EUROPE),
+    responses: {}, // code -> {axis:"NS"|"EW"|"U", side:"N"|"S"|"E"|"W"|"U"}
+    rtMs: {}       // code -> {axisMs:number|null, sideMs:number|null}
+  }
 };
 
 /* ===== SLIDES ===== */
@@ -161,12 +179,12 @@ function updateProgress() {
     return;
   }
   const assigned = Object.keys(study.map.responses).length;
-  const pct = Math.round((assigned / EUROPE.length) * 100);
+  const pct = Math.round((assigned / study.map.order.length) * 100);
   if (progressBar) progressBar.value = pct;
   if (progressText) progressText.textContent = `${pct}%`;
 }
 
-/* ===== TRAITS ===== */
+/* ===== TRAITS (UP TO 8) ===== */
 function makeTraitInputs(container, prefix) {
   if (!container) return;
   container.innerHTML = "";
@@ -189,14 +207,29 @@ function makeTraitInputs(container, prefix) {
   }
 }
 
-function readTraits(prefix) {
+function readTraitsRaw(prefix) {
   const items = [];
-  for (let i = 1; i <= 8; i++) items.push((document.getElementById(`${prefix}_${i}`)?.value || "").trim());
-  return items;
+  for (let i = 1; i <= 8; i++) {
+    items.push((document.getElementById(`${prefix}_${i}`)?.value || "").trim());
+  }
+  return items; // keep 8 slots (with blanks) for transparency
 }
 
-function allFilled(items) {
-  return items.every(v => v.length > 0);
+function countNonEmpty(items) {
+  return items.reduce((acc, v) => acc + (v && v.trim().length > 0 ? 1 : 0), 0);
+}
+
+function validateAtLeastOne(items, errEl, label) {
+  const n = countNonEmpty(items);
+  if (n < 1) {
+    if (errEl) {
+      errEl.textContent = `Please enter at least 1 ${label} trait (you can add up to 8).`;
+      errEl.style.display = "block";
+    }
+    return false;
+  }
+  if (errEl) errEl.style.display = "none";
+  return true;
 }
 
 /* ===== CONSENT ===== */
@@ -275,12 +308,18 @@ function readDemographics() {
   return true;
 }
 
-/* ===== MAP TASK ===== */
+/* ===== MAP TASK (AXIS -> SIDE) ===== */
 let svg = null;
 let currentISO3 = null;
-let trialStartMs = null;
 const historyStack = [];
 let hasFinished = false;
+
+// per-trial state
+let phase = "axis";   // "axis" | "side"
+let chosenAxis = null; // "NS" | "EW"
+let axisStartMs = null;
+let sideStartMs = null;
+let lastAxisRtMs = null;
 
 async function loadSVG() {
   const res = await fetch("./Blank_map_of_Europe_cropped.svg");
@@ -294,15 +333,15 @@ async function loadSVG() {
   return svgEl;
 }
 
-function paintCountry(code, region) {
+function paintCountry(code, side) {
   const g = svg.querySelector(`#g${code}`);
   if (!g) return;
-  const color = region ? (REGION_COLOR[region] || DEFAULT_COLOR) : DEFAULT_COLOR;
+  const color = side ? (REGION_COLOR[side] || DEFAULT_COLOR) : DEFAULT_COLOR;
   g.querySelectorAll("path").forEach(p => p.style.fill = color);
 }
 
 function pickNextUnassigned() {
-  return EUROPE.find(c => !(c in study.map.responses)) || null;
+  return study.map.order.find(c => !(c in study.map.responses)) || null;
 }
 
 function setPrompt() {
@@ -310,7 +349,40 @@ function setPrompt() {
   const name = COUNTRY_NAME[currentISO3];
   const needsThe = (currentISO3 === "GBR" || currentISO3 === "NLD");
   const label = needsThe ? `the ${name}` : name;
-  promptEl.innerHTML = `Where does <strong>${label}</strong> belong?`;
+
+  if (phase === "axis") {
+    promptEl.innerHTML = `Which dimension fits <strong>${label}</strong> best?`;
+  } else {
+    const dim = (chosenAxis === "NS") ? "North–South" : "East–West";
+    promptEl.innerHTML = `On <strong>${dim}</strong>, where does <strong>${label}</strong> belong?`;
+  }
+}
+
+function renderButtons() {
+  if (!axisButtons || !regionButtons) return;
+  axisButtons.style.display = (phase === "axis") ? "flex" : "none";
+  regionButtons.style.display = (phase === "side") ? "flex" : "none";
+}
+
+function configureSideButtonsForAxis(axis) {
+  const btnN = regionButtons?.querySelector('button[data-region="N"]');
+  const btnS = regionButtons?.querySelector('button[data-region="S"]');
+  const btnE = regionButtons?.querySelector('button[data-region="E"]');
+  const btnW = regionButtons?.querySelector('button[data-region="W"]');
+
+  if (!btnN || !btnS || !btnE || !btnW) return;
+
+  if (axis === "NS") {
+    btnN.style.display = "inline-block";
+    btnS.style.display = "inline-block";
+    btnE.style.display = "none";
+    btnW.style.display = "none";
+  } else {
+    btnN.style.display = "none";
+    btnS.style.display = "none";
+    btnE.style.display = "inline-block";
+    btnW.style.display = "inline-block";
+  }
 }
 
 function positionMarkerOnCountry(code) {
@@ -337,27 +409,60 @@ function goNext() {
   currentISO3 = pickNextUnassigned();
   if (!currentISO3) { finishTask(); return; }
 
-  setPrompt();
-  updateProgress();
+  phase = "axis";
+  chosenAxis = null;
+  lastAxisRtMs = null;
+  axisStartMs = performance.now();
+  sideStartMs = null;
 
-  trialStartMs = performance.now();
+  setPrompt();
+  renderButtons();
+  updateProgress();
   requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
 }
 
-function assign(region) {
-  const rt = trialStartMs == null ? null : Math.round(performance.now() - trialStartMs);
-
+function storeHistorySnapshot(code) {
   historyStack.push({
-    code: currentISO3,
-    prev: study.map.responses[currentISO3] ?? null,
-    prevRt: study.map.rtMs[currentISO3] ?? null
+    code,
+    prev: study.map.responses[code] ?? null,
+    prevRt: study.map.rtMs[code] ?? null
   });
+}
 
-  study.map.responses[currentISO3] = region;
-  study.map.rtMs[currentISO3] = rt;
-
-  paintCountry(currentISO3, region);
+function finalizeResponse(code, axis, side, rtObj) {
+  storeHistorySnapshot(code);
+  study.map.responses[code] = { axis, side };
+  study.map.rtMs[code] = rtObj;
+  paintCountry(code, side);
   goNext();
+}
+
+function chooseAxis(axis) {
+  if (!currentISO3) return;
+
+  const rtAxis = axisStartMs == null ? null : Math.round(performance.now() - axisStartMs);
+
+  // Unsure ends trial immediately
+  if (axis === "U") {
+    finalizeResponse(currentISO3, "U", "U", { axisMs: rtAxis, sideMs: null });
+    return;
+  }
+
+  chosenAxis = axis; // "NS" or "EW"
+  lastAxisRtMs = rtAxis;
+
+  phase = "side";
+  setPrompt();
+  renderButtons();
+  configureSideButtonsForAxis(chosenAxis);
+
+  sideStartMs = performance.now();
+}
+
+function chooseSide(side) {
+  if (!currentISO3 || phase !== "side" || !chosenAxis) return;
+  const rtSide = sideStartMs == null ? null : Math.round(performance.now() - sideStartMs);
+  finalizeResponse(currentISO3, chosenAxis, side, { axisMs: lastAxisRtMs, sideMs: rtSide });
 }
 
 function undo() {
@@ -371,14 +476,32 @@ function undo() {
   } else {
     study.map.responses[last.code] = last.prev;
     study.map.rtMs[last.code] = last.prevRt;
-    paintCountry(last.code, last.prev);
+    const prevSide = (typeof last.prev === "string") ? last.prev : last.prev.side;
+    paintCountry(last.code, prevSide);
   }
 
   currentISO3 = last.code;
-  setPrompt();
-  updateProgress();
 
-  trialStartMs = performance.now();
+  // restart on axis step for cleanliness
+  phase = "axis";
+  chosenAxis = null;
+  lastAxisRtMs = null;
+  axisStartMs = performance.now();
+  sideStartMs = null;
+
+  // reset side buttons (so next axis choice reconfigures correctly)
+  const btnN = regionButtons?.querySelector('button[data-region="N"]');
+  const btnS = regionButtons?.querySelector('button[data-region="S"]');
+  const btnE = regionButtons?.querySelector('button[data-region="E"]');
+  const btnW = regionButtons?.querySelector('button[data-region="W"]');
+  if (btnN) btnN.style.display = "inline-block";
+  if (btnS) btnS.style.display = "inline-block";
+  if (btnE) btnE.style.display = "inline-block";
+  if (btnW) btnW.style.display = "inline-block";
+
+  setPrompt();
+  renderButtons();
+  updateProgress();
   requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
 }
 
@@ -415,7 +538,8 @@ async function finishTask() {
   if (hasFinished) return;
   hasFinished = true;
 
-  document.querySelectorAll("#regionButtons button").forEach(b => b.disabled = true);
+  // disable buttons
+  document.querySelectorAll("#axisButtons button, #regionButtons button").forEach(b => b.disabled = true);
   if (undoBtn) undoBtn.disabled = true;
   if (markerEl) markerEl.style.display = "none";
 
@@ -423,10 +547,6 @@ async function finishTask() {
 
   try {
     await saveAutomatically();
-
-    const pidEl = document.getElementById("pidDisplay");
-    if (pidEl) pidEl.textContent = participantId;
-
     setSlide(8); // Debrief
   } catch (e) {
     console.error("SAVE FAILED:", e);
@@ -477,14 +597,14 @@ function applySampleText() {
     document.getElementById("pos_1")?.focus();
   };
 
-  // Positive traits
+  // Positive traits (up to 8; require at least 1)
   posBackBtn.onclick = () => setSlide(2);
   posNextBtn.onclick = () => {
-    const items = readTraits("pos");
-    if (!allFilled(items)) { if (posError) posError.style.display = "block"; return; }
-    if (posError) posError.style.display = "none";
+    const items = readTraitsRaw("pos");
+    if (!validateAtLeastOne(items, posError, "positive")) return;
 
     study.traits.positive.items = items;
+    study.traits.positive.count = countNonEmpty(items);
     study.traits.positive.rtMs = Math.round(performance.now() - traitPosStartMs);
 
     setSlide(4); // instructions neg
@@ -499,14 +619,14 @@ function applySampleText() {
     document.getElementById("neg_1")?.focus();
   };
 
-  // Negative traitsS
+  // Negative traits (up to 8; require at least 1)
   negBackBtn.onclick = () => setSlide(4);
   negNextBtn.onclick = () => {
-    const items = readTraits("neg");
-    if (!allFilled(items)) { if (negError) negError.style.display = "block"; return; }
-    if (negError) negError.style.display = "none";
+    const items = readTraitsRaw("neg");
+    if (!validateAtLeastOne(items, negError, "negative")) return;
 
     study.traits.negative.items = items;
+    study.traits.negative.count = countNonEmpty(items);
     study.traits.negative.rtMs = Math.round(performance.now() - traitNegStartMs);
 
     setSlide(6); // instructions map
@@ -518,17 +638,27 @@ function applySampleText() {
     setSlide(7); // map
 
     svg = await loadSVG();
-    EUROPE.forEach(c => paintCountry(c, null));
+    study.map.order.forEach(c => paintCountry(c, null));
 
-    document.querySelectorAll("#regionButtons button").forEach(btn => {
-      btn.onclick = () => assign(btn.dataset.region);
+    // Axis buttons
+    document.querySelectorAll("#axisButtons button").forEach(btn => {
+      btn.onclick = () => chooseAxis(btn.dataset.axis);
     });
+
+    // Side buttons
+    document.querySelectorAll("#regionButtons button").forEach(btn => {
+      btn.onclick = () => chooseSide(btn.dataset.region);
+    });
+
     if (undoBtn) undoBtn.onclick = undo;
 
     window.addEventListener("resize", () => {
       if (currentISO3) requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
     });
 
+    // start task
+    phase = "axis";
+    renderButtons();
     goNext();
   };
 })();
