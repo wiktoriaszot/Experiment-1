@@ -266,8 +266,9 @@
     }
     .smallNote{ font-size:12px; color:#666; margin-top:8px; }
 
-    #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 10px 0 8px 0; line-height:1.15; }
+    #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 10px 0 6px 0; line-height:1.15; }
     #prompt strong{ font-weight:800; }
+    #subPrompt{ text-align:center; font-size:14px; color:#555; margin: 0 0 8px 0; }
 
     #buttonRow{ display:flex; justify-content:center; align-items:center; gap:12px; margin: 6px 0 4px 0; flex-wrap:wrap; }
     #regionButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
@@ -518,7 +519,7 @@
       <div class="card">
         <div class="h1">Categorize countries</div>
         <div class="p">
-          You will see a map of Europe. For each country, decide whether it fits better on a <strong>North–South</strong> or <strong>East–West</strong> axis, based on your own intuition. Then choose the specific direction (e.g., <strong>North</strong>).
+          You will see a map of Europe. For each country, first decide whether it fits better on a <strong>North–South</strong> or <strong>East–West</strong> axis. Then choose the specific direction on that axis (e.g., <strong>North</strong>), and finally choose the direction on the other axis.
         </div>
         <ul class="infoList">
           <li>There are no correct answers — use your own judgement.</li>
@@ -535,6 +536,7 @@
 
     <div class="slide" id="slideMapTop">
       <div id="prompt"></div>
+      <div id="subPrompt"></div>
 
       <div id="buttonRow">
         <div id="axisButtons">
@@ -545,8 +547,8 @@
         <div id="regionButtons">
           <button class="btnN" data-region="N" type="button">North</button>
           <button class="btnS" data-region="S" type="button">South</button>
-          <button class="btnE" data-region="E" type="button">East</button>
           <button class="btnW" data-region="W" type="button">West</button>
+          <button class="btnE" data-region="E" type="button">East</button>
         </div>
 
         <button id="undoBtn" type="button">Undo</button>
@@ -571,6 +573,6 @@
   </div>
 
   <script>window.SAMPLE = "PL";</script>
-  <script src="main.js"></script>
+  <script src="main (1).js"></script>
 </body>
 </html>
