@@ -27,6 +27,9 @@ const COUNTRY_NAME = {
 
 const REGION_COLOR = { N:"#1039c1", S:"#d01212", E:"#eded35", W:"#35d40d" };
 const DEFAULT_COLOR = "#c9c9c9";
+const STRIPE_SIZE = 12;
+const STRIPE_WIDTH = 4;
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 function shuffleCopy(arr) {
   const a = arr.slice();
@@ -95,6 +98,7 @@ const posError = document.getElementById("posError");
 const negError = document.getElementById("negError");
 
 const promptEl = document.getElementById("prompt");
+const subPromptEl = document.getElementById("subPrompt");
 const undoBtn = document.getElementById("undoBtn");
 const mapWrap = document.getElementById("mapWrap");
 const markerEl = document.getElementById("marker");
@@ -295,10 +299,13 @@ const historyStack = [];
 let hasFinished = false;
 
 let phase = "axis";
-let chosenAxis = null;
+let firstAxis = null;
+let firstSide = null;
 let axisStartMs = null;
-let sideStartMs = null;
+let firstSideStartMs = null;
+let secondSideStartMs = null;
 let lastAxisRtMs = null;
+let lastFirstSideRtMs = null;
 
 async function loadSVG() {
   const res = await fetch("./Blank_map_of_Europe_cropped.svg");
@@ -312,11 +319,56 @@ async function loadSVG() {
   return svgEl;
 }
 
-function paintCountry(code, side) {
+function ensurePattern(baseSide, stripeSide) {
+  if (!svg) return null;
+  const id = `pat_${baseSide}_${stripeSide}`;
+  if (svg.querySelector(`#${id}`)) return id;
+
+  let defs = svg.querySelector("defs");
+  if (!defs) {
+    defs = document.createElementNS(SVG_NS, "defs");
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  const pattern = document.createElementNS(SVG_NS, "pattern");
+  pattern.setAttribute("id", id);
+  pattern.setAttribute("patternUnits", "userSpaceOnUse");
+  pattern.setAttribute("width", String(STRIPE_SIZE));
+  pattern.setAttribute("height", String(STRIPE_SIZE));
+  pattern.setAttribute("patternTransform", "rotate(45)");
+
+  const rectBase = document.createElementNS(SVG_NS, "rect");
+  rectBase.setAttribute("width", String(STRIPE_SIZE));
+  rectBase.setAttribute("height", String(STRIPE_SIZE));
+  rectBase.setAttribute("fill", REGION_COLOR[baseSide] || DEFAULT_COLOR);
+
+  const rectStripe = document.createElementNS(SVG_NS, "rect");
+  rectStripe.setAttribute("width", String(STRIPE_WIDTH));
+  rectStripe.setAttribute("height", String(STRIPE_SIZE));
+  rectStripe.setAttribute("fill", REGION_COLOR[stripeSide] || DEFAULT_COLOR);
+
+  pattern.appendChild(rectBase);
+  pattern.appendChild(rectStripe);
+  defs.appendChild(pattern);
+
+  return id;
+}
+
+function paintCountry(code, paintSpec) {
   const g = svg.querySelector(`#g${code}`);
   if (!g) return;
-  const color = side ? (REGION_COLOR[side] || DEFAULT_COLOR) : DEFAULT_COLOR;
-  g.querySelectorAll("path").forEach((p) => (p.style.fill = color));
+  let fill = DEFAULT_COLOR;
+  if (!paintSpec) {
+    fill = DEFAULT_COLOR;
+  } else if (typeof paintSpec === "string") {
+    fill = REGION_COLOR[paintSpec] || DEFAULT_COLOR;
+  } else if (paintSpec.base && paintSpec.stripe) {
+    const patId = ensurePattern(paintSpec.base, paintSpec.stripe);
+    fill = patId ? `url(#${patId})` : (REGION_COLOR[paintSpec.base] || DEFAULT_COLOR);
+  } else if (paintSpec.base) {
+    fill = REGION_COLOR[paintSpec.base] || DEFAULT_COLOR;
+  }
+  g.querySelectorAll("path").forEach((p) => (p.style.fill = fill));
 }
 
 function pickNextUnassigned() {
@@ -328,13 +380,25 @@ function setPrompt() {
   const name = COUNTRY_NAME[currentISO3];
   const needsThe = (currentISO3 === "GBR" || currentISO3 === "NLD");
   const label = needsThe ? `the ${name}` : name;
-  promptEl.textContent = label;
+  const question =
+    phase === "axis"
+      ? "Choose an axis: North–South or East–West."
+      : phase === "firstSide"
+        ? (firstAxis === "NS" ? "Is it North or South?" : "Is it East or West?")
+        : (firstAxis === "NS" ? "Is it East or West?" : "Is it North or South?");
+
+  if (promptEl) promptEl.textContent = label;
+  if (subPromptEl) {
+    subPromptEl.textContent = question;
+  } else if (promptEl) {
+    promptEl.textContent = `${label} — ${question}`;
+  }
 }
 
 function renderButtons() {
   if (!axisButtons || !regionButtons) return;
   axisButtons.style.display = phase === "axis" ? "flex" : "none";
-  regionButtons.style.display = phase === "side" ? "flex" : "none";
+  regionButtons.style.display = (phase === "firstSide" || phase === "secondSide") ? "flex" : "none";
 }
 
 function configureSideButtonsForAxis(axis) {
@@ -393,10 +457,13 @@ function goNext() {
   }
 
   phase = "axis";
-  chosenAxis = null;
+  firstAxis = null;
+  firstSide = null;
   lastAxisRtMs = null;
+  lastFirstSideRtMs = null;
   axisStartMs = performance.now();
-  sideStartMs = null;
+  firstSideStartMs = null;
+  secondSideStartMs = null;
 
   setPrompt();
   renderButtons();
@@ -412,11 +479,25 @@ function storeHistorySnapshot(code) {
   });
 }
 
-function finalizeResponse(code, axis, side, rtObj) {
+function getResponsePaintSpec(resp) {
+  if (!resp) return null;
+  if (typeof resp === "string") return resp;
+  if (resp.firstSide && resp.secondSide) return { base: resp.firstSide, stripe: resp.secondSide };
+  if (resp.side) return resp.side;
+  if (resp.firstSide) return resp.firstSide;
+  return null;
+}
+
+function finalizeResponse(code, axis, first, second, rtObj) {
   storeHistorySnapshot(code);
-  study.map.responses[code] = { axis, side };
+  study.map.responses[code] = {
+    firstAxis: axis,
+    firstSide: first,
+    secondAxis: axis === "NS" ? "EW" : "NS",
+    secondSide: second
+  };
   study.map.rtMs[code] = rtObj;
-  paintCountry(code, side);
+  paintCountry(code, { base: first, stripe: second });
   goNext();
 }
 
@@ -426,21 +507,39 @@ function chooseAxis(axis) {
 
   const rtAxis = axisStartMs == null ? null : Math.round(performance.now() - axisStartMs);
 
-  chosenAxis = axis;
+  firstAxis = axis;
   lastAxisRtMs = rtAxis;
 
-  phase = "side";
+  phase = "firstSide";
   setPrompt();
   renderButtons();
-  configureSideButtonsForAxis(chosenAxis);
+  configureSideButtonsForAxis(firstAxis);
 
-  sideStartMs = performance.now();
+  firstSideStartMs = performance.now();
 }
 
 function chooseSide(side) {
-  if (!currentISO3 || phase !== "side" || !chosenAxis) return;
-  const rtSide = sideStartMs == null ? null : Math.round(performance.now() - sideStartMs);
-  finalizeResponse(currentISO3, chosenAxis, side, { axisMs: lastAxisRtMs, sideMs: rtSide });
+  if (!currentISO3 || !firstAxis) return;
+
+  if (phase === "firstSide") {
+    firstSide = side;
+    lastFirstSideRtMs = firstSideStartMs == null ? null : Math.round(performance.now() - firstSideStartMs);
+    phase = "secondSide";
+    setPrompt();
+    renderButtons();
+    configureSideButtonsForAxis(firstAxis === "NS" ? "EW" : "NS");
+    secondSideStartMs = performance.now();
+    return;
+  }
+
+  if (phase === "secondSide") {
+    const rtSecond = secondSideStartMs == null ? null : Math.round(performance.now() - secondSideStartMs);
+    finalizeResponse(currentISO3, firstAxis, firstSide, side, {
+      axisMs: lastAxisRtMs,
+      firstSideMs: lastFirstSideRtMs,
+      secondSideMs: rtSecond
+    });
+  }
 }
 
 function undo() {
@@ -454,17 +553,19 @@ function undo() {
   } else {
     study.map.responses[last.code] = last.prev;
     study.map.rtMs[last.code] = last.prevRt;
-    const prevSide = typeof last.prev === "string" ? last.prev : last.prev.side;
-    paintCountry(last.code, prevSide);
+    paintCountry(last.code, getResponsePaintSpec(last.prev));
   }
 
   currentISO3 = last.code;
 
   phase = "axis";
-  chosenAxis = null;
+  firstAxis = null;
+  firstSide = null;
   lastAxisRtMs = null;
+  lastFirstSideRtMs = null;
   axisStartMs = performance.now();
-  sideStartMs = null;
+  firstSideStartMs = null;
+  secondSideStartMs = null;
 
   const btnN = regionButtons?.querySelector('button[data-region="N"]');
   const btnS = regionButtons?.querySelector('button[data-region="S"]');
@@ -520,6 +621,7 @@ async function finishTask() {
   if (markerEl) markerEl.style.display = "none";
 
   if (promptEl) promptEl.textContent = "Saving your responses…";
+  if (subPromptEl) subPromptEl.textContent = "";
 
   try {
     await saveAutomatically();
@@ -620,8 +722,8 @@ function applySampleText() {
       if (currentISO3) requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
     });
 
-    phase = "axis";
-    renderButtons();
-    goNext();
+  phase = "axis";
+  renderButtons();
+  goNext();
   };
 })();
