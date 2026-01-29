@@ -727,3 +727,4 @@ function applySampleText() {
   goNext();
   };
 })();
+
