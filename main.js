@@ -6,6 +6,47 @@ const SAVE_URL =
 const SAMPLE =
   (String(window.SAMPLE || "PL")).toUpperCase() === "MT" ? "MT" : "PL";
 
+const UI_LANG = (window.UI_LANG === "pl") ? "pl" : "en";
+
+const I18N = {
+  en: {
+    traitPlaceholder: "Trait…",
+    consentTick: "Please tick the consent box to continue.",
+    ageRequired: "Please enter your age.",
+    ageRange: "Age must be between 18 and 120.",
+    genderRequired: "Please select your gender.",
+    nationalityRequired: "Please enter your nationality.",
+    onlyPLorMT: "Only Polish or Maltese participants can take part in this study.",
+    needPolishNat: "Please enter Polish nationality for this version.",
+    needMalteseNat: "Please enter Maltese nationality for this version.",
+    atLeastOneTrait: (label) => `Please enter at least 1 ${label} trait (you can add up to 8).`,
+    mapQ_axis: "Choose an axis: North–South or East–West.",
+    mapQ_ns: "Is it North or South?",
+    mapQ_ew: "Is it East or West?",
+    saving: "Saving your responses…",
+    savingFailed: "Saving failed. Please contact the researcher."
+  },
+  pl: {
+    traitPlaceholder: "Cecha…",
+    consentTick: "Zaznacz zgodę, aby przejść dalej.",
+    ageRequired: "Podaj swój wiek.",
+    ageRange: "Wiek musi być w zakresie 18–120.",
+    genderRequired: "Wybierz płeć.",
+    nationalityRequired: "Wpisz obywatelstwo.",
+    onlyPLorMT: "W badaniu mogą wziąć udział wyłącznie osoby z obywatelstwem polskim lub maltańskim.",
+    needPolishNat: "W tej wersji wpisz obywatelstwo polskie.",
+    needMalteseNat: "W tej wersji wpisz obywatelstwo maltańskie.",
+    atLeastOneTrait: (label) => `Wpisz co najmniej 1 cechę (${label}) (możesz podać maks. 8).`,
+    mapQ_axis: "Wybierz oś: Północ–Południe albo Wschód–Zachód.",
+    mapQ_ns: "Północ czy Południe?",
+    mapQ_ew: "Wschód czy Zachód?",
+    saving: "Zapisywanie odpowiedzi…",
+    savingFailed: "Nie udało się zapisać danych. Skontaktuj się z badaczką."
+  }
+};
+
+const T = I18N[UI_LANG];
+
 const EUROPE = [
   "FRA","BEL","DEU","CHE","ITA","MLT","ESP","PRT","GBR","IRL","NLD",
   "DNK","NOR","SWE","FIN","ISL",
@@ -186,7 +227,7 @@ function makeTraitInputs(container, prefix) {
 
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "Trait…";
+    input.placeholder = T.traitPlaceholder;
     input.id = `${prefix}_${i}`;
 
     row.appendChild(n);
@@ -211,7 +252,7 @@ function validateAtLeastOne(items, errEl, label) {
   const n = countNonEmpty(items);
   if (n < 1) {
     if (errEl) {
-      errEl.textContent = `Please enter at least 1 ${label} trait (you can add up to 8).`;
+      errEl.textContent = T.atLeastOneTrait(label);
       errEl.style.display = "block";
     }
     return false;
@@ -224,7 +265,7 @@ let consentStartMs = performance.now();
 
 function validateConsent() {
   if (!consentEl?.checked) {
-    consentError.textContent = "Please tick the consent box to continue.";
+    consentError.textContent = T.consentTick;
     consentError.style.display = "block";
     return false;
   }
@@ -238,14 +279,14 @@ function readDemographics() {
   const rawAge = (ageEl?.value || "").trim();
 
   if (rawAge === "") {
-    demoError.textContent = "Please enter your age.";
+    demoError.textContent = T.ageRequired;
     demoError.style.display = "block";
     return false;
   }
 
   const n = Number(rawAge);
   if (!Number.isFinite(n) || n < 18 || n > 120) {
-    demoError.textContent = "Age must be between 18 and 120.";
+    demoError.textContent = T.ageRange;
     demoError.style.display = "block";
     return false;
   }
@@ -254,33 +295,33 @@ function readDemographics() {
   if (genderMaleEl?.checked) gender = "male";
   if (genderFemaleEl?.checked) gender = "female";
   if (!gender) {
-    demoError.textContent = "Please select your gender.";
+    demoError.textContent = T.genderRequired;
     demoError.style.display = "block";
     return false;
   }
 
   const nationality = (nationalityEl?.value || "").trim();
   if (!nationality) {
-    demoError.textContent = "Please enter your nationality.";
+    demoError.textContent = T.nationalityRequired;
     demoError.style.display = "block";
     return false;
   }
 
   const nat = nationality.toLowerCase();
-  const isPolish = nat.includes("pol") || nat.includes("poland");
+  const isPolish = nat.includes("pol") || nat.includes("poland") || nat.includes("polskie");
   const isMaltese = nat.includes("malt");
   if (!isPolish && !isMaltese) {
-    demoError.textContent = "Only Polish or Maltese participants can take part in this study.";
+    demoError.textContent = T.onlyPLorMT;
     demoError.style.display = "block";
     return false;
   }
   if (SAMPLE === "PL" && !isPolish) {
-    demoError.textContent = "Please enter Polish nationality for this version.";
+    demoError.textContent = T.needPolishNat;
     demoError.style.display = "block";
     return false;
   }
   if (SAMPLE === "MT" && !isMaltese) {
-    demoError.textContent = "Please enter Maltese nationality for this version.";
+    demoError.textContent = T.needMalteseNat;
     demoError.style.display = "block";
     return false;
   }
@@ -380,12 +421,13 @@ function setPrompt() {
   const name = COUNTRY_NAME[currentISO3];
   const needsThe = (currentISO3 === "GBR" || currentISO3 === "NLD");
   const label = needsThe ? `the ${name}` : name;
+
   const question =
     phase === "axis"
-      ? "Choose an axis: North–South or East–West."
+      ? T.mapQ_axis
       : phase === "firstSide"
-        ? (firstAxis === "NS" ? "Is it North or South?" : "Is it East or West?")
-        : (firstAxis === "NS" ? "Is it East or West?" : "Is it North or South?");
+        ? (firstAxis === "NS" ? T.mapQ_ns : T.mapQ_ew)
+        : (firstAxis === "NS" ? T.mapQ_ew : T.mapQ_ns);
 
   if (promptEl) promptEl.textContent = label;
   if (subPromptEl) {
@@ -430,8 +472,7 @@ function positionMarkerOnCountry(code) {
   }
 
   const paths = [...g.querySelectorAll("path")];
-  let bestRect = null,
-    bestArea = -1;
+  let bestRect = null, bestArea = -1;
 
   for (const p of paths) {
     const r = p.getBoundingClientRect();
@@ -620,7 +661,7 @@ async function finishTask() {
   if (undoBtn) undoBtn.disabled = true;
   if (markerEl) markerEl.style.display = "none";
 
-  if (promptEl) promptEl.textContent = "Saving your responses…";
+  if (promptEl) promptEl.textContent = T.saving;
   if (subPromptEl) subPromptEl.textContent = "";
 
   try {
@@ -628,7 +669,7 @@ async function finishTask() {
     setSlide(8);
   } catch (e) {
     console.error("SAVE FAILED:", e);
-    if (promptEl) promptEl.textContent = "Saving failed. Please contact the researcher.";
+    if (promptEl) promptEl.textContent = T.savingFailed;
   }
 }
 
@@ -672,7 +713,8 @@ function applySampleText() {
   posBackBtn.onclick = () => setSlide(2);
   posNextBtn.onclick = () => {
     const items = readTraitsRaw("pos");
-    if (!validateAtLeastOne(items, posError, "positive")) return;
+    const posLabel = (UI_LANG === "pl") ? "pozytywną" : "positive";
+    if (!validateAtLeastOne(items, posError, posLabel)) return;
 
     study.traits.positive.items = items;
     study.traits.positive.count = countNonEmpty(items);
@@ -692,7 +734,8 @@ function applySampleText() {
   negBackBtn.onclick = () => setSlide(4);
   negNextBtn.onclick = () => {
     const items = readTraitsRaw("neg");
-    if (!validateAtLeastOne(items, negError, "negative")) return;
+    const negLabel = (UI_LANG === "pl") ? "negatywną" : "negative";
+    if (!validateAtLeastOne(items, negError, negLabel)) return;
 
     study.traits.negative.items = items;
     study.traits.negative.count = countNonEmpty(items);
@@ -722,9 +765,8 @@ function applySampleText() {
       if (currentISO3) requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
     });
 
-  phase = "axis";
-  renderButtons();
-  goNext();
+    phase = "axis";
+    renderButtons();
+    goNext();
   };
 })();
-
