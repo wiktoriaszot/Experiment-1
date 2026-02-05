@@ -24,7 +24,7 @@ const I18N = {
     mapQ_ns: "Is it North or South?",
     mapQ_ew: "Is it East or West?",
     saving: "Saving your responses…",
-    savingFailed: "Saving failed. Please contact the researcher."
+    savingFailed: "Saving failed. Please contact the researcher: wiktoria.szot.24@um.edu.mt"
   },
   pl: {
     traitPlaceholder: "Cecha…",
@@ -41,7 +41,7 @@ const I18N = {
     mapQ_ns: "Północ czy Południe?",
     mapQ_ew: "Wschód czy Zachód?",
     saving: "Zapisywanie odpowiedzi…",
-    savingFailed: "Nie udało się zapisać danych. Skontaktuj się z badaczką."
+    savingFailed: "Nie udało się zapisać danych. Skontaktuj się z autorem eksperymentu: wiktoria.szot.24@um.edu.mt"
   }
 };
 
@@ -770,3 +770,4 @@ function applySampleText() {
     goNext();
   };
 })();
+
