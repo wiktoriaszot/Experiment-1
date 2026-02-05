@@ -6,6 +6,7 @@
   <title>Autostereotypy w Polsce</title>
 
   <style>
+    /* identyczny CSS jak w mt.html — możesz go zostawić 1:1 */
     html, body { height: 100%; margin: 0; }
 
     body{
@@ -263,10 +264,8 @@
       font-size: 14px;
       line-height: 1.5;
     }
-    .smallNote{ font-size:12px; color:#666; margin-top:8px; }
 
     #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 10px 0 6px 0; line-height:1.15; }
-    #prompt strong{ font-weight:800; }
     #subPrompt{ text-align:center; font-size:14px; color:#555; margin: 0 0 8px 0; }
 
     #buttonRow{ display:flex; justify-content:center; align-items:center; gap:12px; margin: 6px 0 4px 0; flex-wrap:wrap; }
@@ -467,7 +466,7 @@
 
     <div class="slide centeredSlide" id="slidePos">
       <div class="card">
-        <div class="h1">Opisz Polaków</div>
+        <div class="h1">Cechy kojarzone z Polakami</div>
         <div class="p">Wpisz <strong>do 8 pozytywnych cech</strong> (pojedyncze słowa lub krótkie frazy).</div>
         <div class="traitsGrid" id="posTraitsGrid"></div>
 
@@ -501,7 +500,7 @@
 
     <div class="slide centeredSlide" id="slideNeg">
       <div class="card">
-        <div class="h1">Opisz Polaków</div>
+        <div class="h1">Cechy kojarzone z Polakami</div>
         <div class="p">Wpisz <strong>do 8 negatywnych cech</strong> (pojedyncze słowa lub krótkie frazy).</div>
         <div class="traitsGrid" id="negTraitsGrid"></div>
 
@@ -516,7 +515,7 @@
 
     <div class="slide centeredSlide" id="slideInstrMap">
       <div class="card">
-        <div class="h1">Kategoryzuj kraje</div>
+        <div class="h1">Przypisz kraje do kierunków</div>
         <div class="p">
           Zobaczysz mapę Europy. Dla każdego kraju najpierw zdecyduj, czy lepiej pasuje do osi <strong>Północ–Południe</strong> czy <strong>Wschód–Zachód</strong>.
           Następnie wybierz konkretny kierunek na tej osi (np. <strong>Północ</strong>), a na końcu wybierz kierunek na drugiej osi.
@@ -577,4 +576,3 @@
   <script src="main.js"></script>
 </body>
 </html>
-
