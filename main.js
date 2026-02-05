@@ -1,13 +1,52 @@
 window.addEventListener("error", (e) => console.error("JS error:", e.message));
 
-/* ===== CONFIG ===== */
 const SAVE_URL =
   "https://script.google.com/macros/s/AKfycbxMmwWVXfrrYDo5lNT132hx4WkkUdPAdXKKU2bbKDq362LVpgy9gqJGB9jJnDMf7FQTyg/exec";
 
 const SAMPLE =
   (String(window.SAMPLE || "PL")).toUpperCase() === "MT" ? "MT" : "PL";
 
-/* ===== MAP CONSTANTS ===== */
+const UI_LANG = (window.UI_LANG === "pl") ? "pl" : "en";
+
+const I18N = {
+  en: {
+    traitPlaceholder: "Trait…",
+    consentTick: "Please tick the consent box to continue.",
+    ageRequired: "Please enter your age.",
+    ageRange: "Age must be between 18 and 120.",
+    genderRequired: "Please select your gender.",
+    nationalityRequired: "Please enter your nationality.",
+    onlyPLorMT: "Only Polish or Maltese participants can take part in this study.",
+    needPolishNat: "Please enter Polish nationality for this version.",
+    needMalteseNat: "Please enter Maltese nationality for this version.",
+    atLeastOneTrait: (label) => `Please enter at least 1 ${label} trait (you can add up to 8).`,
+    mapQ_axis: "Choose an axis: North–South or East–West.",
+    mapQ_ns: "Is it North or South?",
+    mapQ_ew: "Is it East or West?",
+    saving: "Saving your responses…",
+    savingFailed: "Saving failed. Please contact the researcher: wiktoria.szot.24@um.edu.mt"
+  },
+  pl: {
+    traitPlaceholder: "Cecha…",
+    consentTick: "Zaznacz zgodę, aby przejść dalej.",
+    ageRequired: "Podaj swój wiek.",
+    ageRange: "Wiek musi być w zakresie 18–120.",
+    genderRequired: "Wybierz płeć.",
+    nationalityRequired: "Wpisz obywatelstwo.",
+    onlyPLorMT: "W badaniu mogą wziąć udział wyłącznie osoby z obywatelstwem polskim lub maltańskim.",
+    needPolishNat: "W tej wersji wpisz obywatelstwo polskie.",
+    needMalteseNat: "W tej wersji wpisz obywatelstwo maltańskie.",
+    atLeastOneTrait: (label) => `Wpisz co najmniej 1 cechę (${label}) (możesz podać maks. 8).`,
+    mapQ_axis: "Wybierz oś: Północ–Południe albo Wschód–Zachód.",
+    mapQ_ns: "Północ czy Południe?",
+    mapQ_ew: "Wschód czy Zachód?",
+    saving: "Zapisywanie odpowiedzi…",
+    savingFailed: "Nie udało się zapisać danych. Skontaktuj się z autorem eksperymentu: wiktoria.szot.24@um.edu.mt"
+  }
+};
+
+const T = I18N[UI_LANG];
+
 const EUROPE = [
   "FRA","BEL","DEU","CHE","ITA","MLT","ESP","PRT","GBR","IRL","NLD",
   "DNK","NOR","SWE","FIN","ISL",
@@ -27,34 +66,54 @@ const COUNTRY_NAME = {
   BLR:"Belarus", UKR:"Ukraine", MDA:"Moldova"
 };
 
-const REGION_COLOR = { N:"#1039c1", S:"#d01212", E:"#eded35", W:"#35d40d", U:"#999" };
-const DEFAULT_COLOR = "#c9c9c9";
+// NOWE: polskie nazwy do UI
+const COUNTRY_NAME_PL = {
+  FRA:"Francja", BEL:"Belgia", DEU:"Niemcy", CHE:"Szwajcaria",
+  ITA:"Włochy", MLT:"Malta", ESP:"Hiszpania", PRT:"Portugalia",
+  GBR:"Wielka Brytania", IRL:"Irlandia", NLD:"Niderlandy",
+  DNK:"Dania", NOR:"Norwegia", SWE:"Szwecja", FIN:"Finlandia", ISL:"Islandia",
+  AUT:"Austria", CZE:"Czechy", SVK:"Słowacja", POL:"Polska", HUN:"Węgry",
+  SVN:"Słowenia", HRV:"Chorwacja", BIH:"Bośnia i Hercegowina", SRB:"Serbia",
+  MNE:"Czarnogóra", MKD:"Macedonia Północna", ALB:"Albania", GRC:"Grecja",
+  BGR:"Bułgaria", ROU:"Rumunia", LTU:"Litwa", LVA:"Łotwa", EST:"Estonia",
+  BLR:"Białoruś", UKR:"Ukraina", MDA:"Mołdawia"
+};
 
-/* ===== DOM ===== */
+const REGION_COLOR = { N:"#1039c1", S:"#d01212", E:"#eded35", W:"#35d40d" };
+const DEFAULT_COLOR = "#c9c9c9";
+const STRIPE_SIZE = 12;
+const STRIPE_WIDTH = 4;
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function shuffleCopy(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const slideCoverConsent = document.getElementById("slideCoverConsent");
 const slideDemographics = document.getElementById("slideDemographics");
-
 const slideInstrPos = document.getElementById("slideInstrPos");
 const slidePos = document.getElementById("slidePos");
-
 const slideInstrNeg = document.getElementById("slideInstrNeg");
 const slideNeg = document.getElementById("slideNeg");
-
 const slideInstrMap = document.getElementById("slideInstrMap");
 const slideMapTop = document.getElementById("slideMapTop");
-
 const slideDebrief = document.getElementById("slideDebrief");
 
 const allSlides = [
-  slideCoverConsent,   // 0
-  slideDemographics,   // 1
-  slideInstrPos,       // 2
-  slidePos,            // 3
-  slideInstrNeg,       // 4
-  slideNeg,            // 5
-  slideInstrMap,       // 6
-  slideMapTop,         // 7
-  slideDebrief         // 8
+  slideCoverConsent,
+  slideDemographics,
+  slideInstrPos,
+  slidePos,
+  slideInstrNeg,
+  slideNeg,
+  slideInstrMap,
+  slideMapTop,
+  slideDebrief
 ];
 
 const progressWrap = document.getElementById("progressWrap");
@@ -93,13 +152,16 @@ const posError = document.getElementById("posError");
 const negError = document.getElementById("negError");
 
 const promptEl = document.getElementById("prompt");
+const subPromptEl = document.getElementById("subPrompt");
 const undoBtn = document.getElementById("undoBtn");
 const mapWrap = document.getElementById("mapWrap");
 const markerEl = document.getElementById("marker");
 const mapDataEl = document.getElementById("mapData");
 const contentEl = document.getElementById("content");
 
-/* ===== PARTICIPANT ID ===== */
+const axisButtons = document.getElementById("axisButtons");
+const regionButtons = document.getElementById("regionButtons");
+
 const startedAtISO = new Date().toISOString();
 const participantId = getOrCreateParticipantId();
 
@@ -120,7 +182,6 @@ function getOrCreateParticipantId() {
 const submissionId =
   (crypto.randomUUID ? crypto.randomUUID() : ("s_" + Math.random().toString(16).slice(2)));
 
-/* ===== STUDY STATE ===== */
 let currentSlideIndex = 0;
 let traitPosStartMs = null;
 let traitNegStartMs = null;
@@ -134,21 +195,21 @@ const study = {
   demographics: { age: null, gender: "", nationality: "", residence: "" },
   traits: {
     target: (SAMPLE === "MT") ? "typical_maltese" : "typical_pole",
-    positive: { items: [], rtMs: null },
-    negative: { items: [], rtMs: null }
+    positive: { items: [], rtMs: null, count: 0 },
+    negative: { items: [], rtMs: null, count: 0 }
   },
-  map: { order: EUROPE, responses: {}, rtMs: {} }
+  map: {
+    order: shuffleCopy(EUROPE),
+    responses: {},
+    rtMs: {}
+  }
 };
 
-/* ===== SLIDES ===== */
 function setSlide(i) {
   currentSlideIndex = i;
   allSlides.forEach((s, idx) => s?.classList.toggle("active", idx === i));
 
-  // map area visible only on map slide
   if (contentEl) contentEl.style.display = (i === 7) ? "block" : "none";
-
-  // progress ONLY on map slide
   if (progressWrap) progressWrap.style.display = (i === 7) ? "flex" : "none";
 
   updateProgress();
@@ -161,12 +222,11 @@ function updateProgress() {
     return;
   }
   const assigned = Object.keys(study.map.responses).length;
-  const pct = Math.round((assigned / EUROPE.length) * 100);
+  const pct = Math.round((assigned / study.map.order.length) * 100);
   if (progressBar) progressBar.value = pct;
   if (progressText) progressText.textContent = `${pct}%`;
 }
 
-/* ===== TRAITS ===== */
 function makeTraitInputs(container, prefix) {
   if (!container) return;
   container.innerHTML = "";
@@ -180,7 +240,7 @@ function makeTraitInputs(container, prefix) {
 
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "Trait…";
+    input.placeholder = T.traitPlaceholder;
     input.id = `${prefix}_${i}`;
 
     row.appendChild(n);
@@ -189,22 +249,36 @@ function makeTraitInputs(container, prefix) {
   }
 }
 
-function readTraits(prefix) {
+function readTraitsRaw(prefix) {
   const items = [];
-  for (let i = 1; i <= 8; i++) items.push((document.getElementById(`${prefix}_${i}`)?.value || "").trim());
+  for (let i = 1; i <= 8; i++) {
+    items.push((document.getElementById(`${prefix}_${i}`)?.value || "").trim());
+  }
   return items;
 }
 
-function allFilled(items) {
-  return items.every(v => v.length > 0);
+function countNonEmpty(items) {
+  return items.reduce((acc, v) => acc + (v && v.trim().length > 0 ? 1 : 0), 0);
 }
 
-/* ===== CONSENT ===== */
+function validateAtLeastOne(items, errEl, label) {
+  const n = countNonEmpty(items);
+  if (n < 1) {
+    if (errEl) {
+      errEl.textContent = T.atLeastOneTrait(label);
+      errEl.style.display = "block";
+    }
+    return false;
+  }
+  if (errEl) errEl.style.display = "none";
+  return true;
+}
+
 let consentStartMs = performance.now();
 
 function validateConsent() {
   if (!consentEl?.checked) {
-    consentError.textContent = "Please tick the consent box to continue.";
+    consentError.textContent = T.consentTick;
     consentError.style.display = "block";
     return false;
   }
@@ -214,73 +288,78 @@ function validateConsent() {
   return true;
 }
 
-/* ===== DEMOGRAPHICS ===== */
 function readDemographics() {
   const rawAge = (ageEl?.value || "").trim();
-  let age = null;
 
   if (rawAge === "") {
-    demoError.textContent = "Please enter your age.";
+    demoError.textContent = T.ageRequired;
     demoError.style.display = "block";
     return false;
   }
 
   const n = Number(rawAge);
   if (!Number.isFinite(n) || n < 18 || n > 120) {
-    demoError.textContent = "Age must be between 18 and 120.";
+    demoError.textContent = T.ageRange;
     demoError.style.display = "block";
     return false;
   }
-  age = n;
 
   let gender = "";
   if (genderMaleEl?.checked) gender = "male";
   if (genderFemaleEl?.checked) gender = "female";
   if (!gender) {
-    demoError.textContent = "Please select your gender.";
+    demoError.textContent = T.genderRequired;
     demoError.style.display = "block";
     return false;
   }
 
   const nationality = (nationalityEl?.value || "").trim();
   if (!nationality) {
-    demoError.textContent = "Please enter your nationality.";
+    demoError.textContent = T.nationalityRequired;
     demoError.style.display = "block";
     return false;
   }
+
   const nat = nationality.toLowerCase();
-  const isPolish = nat.includes("pol") || nat.includes("poland");
+  const isPolish = nat.includes("pol") || nat.includes("poland") || nat.includes("polskie");
   const isMaltese = nat.includes("malt");
   if (!isPolish && !isMaltese) {
-    demoError.textContent = "Only Polish or Maltese participants can take part in this study.";
+    demoError.textContent = T.onlyPLorMT;
     demoError.style.display = "block";
     return false;
   }
   if (SAMPLE === "PL" && !isPolish) {
-    demoError.textContent = "Please enter Polish nationality for this version.";
+    demoError.textContent = T.needPolishNat;
     demoError.style.display = "block";
     return false;
   }
   if (SAMPLE === "MT" && !isMaltese) {
-    demoError.textContent = "Please enter Maltese nationality for this version.";
+    demoError.textContent = T.needMalteseNat;
     demoError.style.display = "block";
     return false;
   }
 
   demoError.style.display = "none";
-  study.demographics.age = age;
+  study.demographics.age = n;
   study.demographics.gender = gender;
   study.demographics.nationality = nationality;
   study.demographics.residence = "";
   return true;
 }
 
-/* ===== MAP TASK ===== */
 let svg = null;
 let currentISO3 = null;
-let trialStartMs = null;
 const historyStack = [];
 let hasFinished = false;
+
+let phase = "axis";
+let firstAxis = null;
+let firstSide = null;
+let axisStartMs = null;
+let firstSideStartMs = null;
+let secondSideStartMs = null;
+let lastAxisRtMs = null;
+let lastFirstSideRtMs = null;
 
 async function loadSVG() {
   const res = await fetch("./Blank_map_of_Europe_cropped.svg");
@@ -294,28 +373,122 @@ async function loadSVG() {
   return svgEl;
 }
 
-function paintCountry(code, region) {
+function ensurePattern(baseSide, stripeSide) {
+  if (!svg) return null;
+  const id = `pat_${baseSide}_${stripeSide}`;
+  if (svg.querySelector(`#${id}`)) return id;
+
+  let defs = svg.querySelector("defs");
+  if (!defs) {
+    defs = document.createElementNS(SVG_NS, "defs");
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  const pattern = document.createElementNS(SVG_NS, "pattern");
+  pattern.setAttribute("id", id);
+  pattern.setAttribute("patternUnits", "userSpaceOnUse");
+  pattern.setAttribute("width", String(STRIPE_SIZE));
+  pattern.setAttribute("height", String(STRIPE_SIZE));
+  pattern.setAttribute("patternTransform", "rotate(45)");
+
+  const rectBase = document.createElementNS(SVG_NS, "rect");
+  rectBase.setAttribute("width", String(STRIPE_SIZE));
+  rectBase.setAttribute("height", String(STRIPE_SIZE));
+  rectBase.setAttribute("fill", REGION_COLOR[baseSide] || DEFAULT_COLOR);
+
+  const rectStripe = document.createElementNS(SVG_NS, "rect");
+  rectStripe.setAttribute("width", String(STRIPE_WIDTH));
+  rectStripe.setAttribute("height", String(STRIPE_SIZE));
+  rectStripe.setAttribute("fill", REGION_COLOR[stripeSide] || DEFAULT_COLOR);
+
+  pattern.appendChild(rectBase);
+  pattern.appendChild(rectStripe);
+  defs.appendChild(pattern);
+
+  return id;
+}
+
+function paintCountry(code, paintSpec) {
   const g = svg.querySelector(`#g${code}`);
   if (!g) return;
-  const color = region ? (REGION_COLOR[region] || DEFAULT_COLOR) : DEFAULT_COLOR;
-  g.querySelectorAll("path").forEach(p => p.style.fill = color);
+  let fill = DEFAULT_COLOR;
+  if (!paintSpec) {
+    fill = DEFAULT_COLOR;
+  } else if (typeof paintSpec === "string") {
+    fill = REGION_COLOR[paintSpec] || DEFAULT_COLOR;
+  } else if (paintSpec.base && paintSpec.stripe) {
+    const patId = ensurePattern(paintSpec.base, paintSpec.stripe);
+    fill = patId ? `url(#${patId})` : (REGION_COLOR[paintSpec.base] || DEFAULT_COLOR);
+  } else if (paintSpec.base) {
+    fill = REGION_COLOR[paintSpec.base] || DEFAULT_COLOR;
+  }
+  g.querySelectorAll("path").forEach((p) => (p.style.fill = fill));
 }
 
 function pickNextUnassigned() {
-  return EUROPE.find(c => !(c in study.map.responses)) || null;
+  return study.map.order.find((c) => !(c in study.map.responses)) || null;
 }
 
+// ZMIENIONE: nazwy kraju wg UI_LANG, "the" tylko w EN
 function setPrompt() {
   if (!currentISO3) return;
-  const name = COUNTRY_NAME[currentISO3];
-  const needsThe = (currentISO3 === "GBR" || currentISO3 === "NLD");
+
+  const dict = (UI_LANG === "pl") ? COUNTRY_NAME_PL : COUNTRY_NAME;
+  const name = dict[currentISO3] || currentISO3;
+
+  const needsThe =
+    UI_LANG === "en" && (currentISO3 === "GBR" || currentISO3 === "NLD");
+
   const label = needsThe ? `the ${name}` : name;
-  promptEl.innerHTML = `Where does <strong>${label}</strong> belong?`;
+
+  const question =
+    phase === "axis"
+      ? T.mapQ_axis
+      : phase === "firstSide"
+        ? (firstAxis === "NS" ? T.mapQ_ns : T.mapQ_ew)
+        : (firstAxis === "NS" ? T.mapQ_ew : T.mapQ_ns);
+
+  if (promptEl) promptEl.textContent = label;
+  if (subPromptEl) {
+    subPromptEl.textContent = question;
+  } else if (promptEl) {
+    promptEl.textContent = `${label} — ${question}`;
+  }
+}
+
+function renderButtons() {
+  if (!axisButtons || !regionButtons) return;
+  axisButtons.style.display = phase === "axis" ? "flex" : "none";
+  regionButtons.style.display = (phase === "firstSide" || phase === "secondSide") ? "flex" : "none";
+}
+
+function configureSideButtonsForAxis(axis) {
+  const btnN = regionButtons?.querySelector('button[data-region="N"]');
+  const btnS = regionButtons?.querySelector('button[data-region="S"]');
+  const btnE = regionButtons?.querySelector('button[data-region="E"]');
+  const btnW = regionButtons?.querySelector('button[data-region="W"]');
+
+  if (!btnN || !btnS || !btnE || !btnW) return;
+
+  if (axis === "NS") {
+    btnN.style.display = "inline-block";
+    btnS.style.display = "inline-block";
+    btnE.style.display = "none";
+    btnW.style.display = "none";
+  } else {
+    btnN.style.display = "none";
+    btnS.style.display = "none";
+    btnE.style.display = "inline-block";
+    btnW.style.display = "inline-block";
+  }
 }
 
 function positionMarkerOnCountry(code) {
   const g = svg.querySelector(`#g${code}`);
-  if (!g) { markerEl.style.display = "none"; return; }
+  if (!g) {
+    markerEl.style.display = "none";
+    return;
+  }
 
   const paths = [...g.querySelectorAll("path")];
   let bestRect = null, bestArea = -1;
@@ -323,41 +496,110 @@ function positionMarkerOnCountry(code) {
   for (const p of paths) {
     const r = p.getBoundingClientRect();
     const area = r.width * r.height;
-    if (area > bestArea) { bestArea = area; bestRect = r; }
+    if (area > bestArea) {
+      bestArea = area;
+      bestRect = r;
+    }
   }
   if (!bestRect) return;
 
   const wrap = mapWrap.getBoundingClientRect();
-  markerEl.style.left = `${bestRect.left + bestRect.width/2 - wrap.left}px`;
-  markerEl.style.top  = `${bestRect.top  + bestRect.height/2 - wrap.top}px`;
+  markerEl.style.left = `${bestRect.left + bestRect.width / 2 - wrap.left}px`;
+  markerEl.style.top = `${bestRect.top + bestRect.height / 2 - wrap.top}px`;
   markerEl.style.display = "block";
 }
 
 function goNext() {
   currentISO3 = pickNextUnassigned();
-  if (!currentISO3) { finishTask(); return; }
+  if (!currentISO3) {
+    finishTask();
+    return;
+  }
+
+  phase = "axis";
+  firstAxis = null;
+  firstSide = null;
+  lastAxisRtMs = null;
+  lastFirstSideRtMs = null;
+  axisStartMs = performance.now();
+  firstSideStartMs = null;
+  secondSideStartMs = null;
 
   setPrompt();
+  renderButtons();
   updateProgress();
-
-  trialStartMs = performance.now();
   requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
 }
 
-function assign(region) {
-  const rt = trialStartMs == null ? null : Math.round(performance.now() - trialStartMs);
-
+function storeHistorySnapshot(code) {
   historyStack.push({
-    code: currentISO3,
-    prev: study.map.responses[currentISO3] ?? null,
-    prevRt: study.map.rtMs[currentISO3] ?? null
+    code,
+    prev: study.map.responses[code] ?? null,
+    prevRt: study.map.rtMs[code] ?? null
   });
+}
 
-  study.map.responses[currentISO3] = region;
-  study.map.rtMs[currentISO3] = rt;
+function getResponsePaintSpec(resp) {
+  if (!resp) return null;
+  if (typeof resp === "string") return resp;
+  if (resp.firstSide && resp.secondSide) return { base: resp.firstSide, stripe: resp.secondSide };
+  if (resp.side) return resp.side;
+  if (resp.firstSide) return resp.firstSide;
+  return null;
+}
 
-  paintCountry(currentISO3, region);
+function finalizeResponse(code, axis, first, second, rtObj) {
+  storeHistorySnapshot(code);
+  study.map.responses[code] = {
+    firstAxis: axis,
+    firstSide: first,
+    secondAxis: axis === "NS" ? "EW" : "NS",
+    secondSide: second
+  };
+  study.map.rtMs[code] = rtObj;
+  paintCountry(code, { base: first, stripe: second });
   goNext();
+}
+
+function chooseAxis(axis) {
+  if (!currentISO3) return;
+  if (axis !== "NS" && axis !== "EW") return;
+
+  const rtAxis = axisStartMs == null ? null : Math.round(performance.now() - axisStartMs);
+
+  firstAxis = axis;
+  lastAxisRtMs = rtAxis;
+
+  phase = "firstSide";
+  setPrompt();
+  renderButtons();
+  configureSideButtonsForAxis(firstAxis);
+
+  firstSideStartMs = performance.now();
+}
+
+function chooseSide(side) {
+  if (!currentISO3 || !firstAxis) return;
+
+  if (phase === "firstSide") {
+    firstSide = side;
+    lastFirstSideRtMs = firstSideStartMs == null ? null : Math.round(performance.now() - firstSideStartMs);
+    phase = "secondSide";
+    setPrompt();
+    renderButtons();
+    configureSideButtonsForAxis(firstAxis === "NS" ? "EW" : "NS");
+    secondSideStartMs = performance.now();
+    return;
+  }
+
+  if (phase === "secondSide") {
+    const rtSecond = secondSideStartMs == null ? null : Math.round(performance.now() - secondSideStartMs);
+    finalizeResponse(currentISO3, firstAxis, firstSide, side, {
+      axisMs: lastAxisRtMs,
+      firstSideMs: lastFirstSideRtMs,
+      secondSideMs: rtSecond
+    });
+  }
 }
 
 function undo() {
@@ -371,18 +613,35 @@ function undo() {
   } else {
     study.map.responses[last.code] = last.prev;
     study.map.rtMs[last.code] = last.prevRt;
-    paintCountry(last.code, last.prev);
+    paintCountry(last.code, getResponsePaintSpec(last.prev));
   }
 
   currentISO3 = last.code;
-  setPrompt();
-  updateProgress();
 
-  trialStartMs = performance.now();
+  phase = "axis";
+  firstAxis = null;
+  firstSide = null;
+  lastAxisRtMs = null;
+  lastFirstSideRtMs = null;
+  axisStartMs = performance.now();
+  firstSideStartMs = null;
+  secondSideStartMs = null;
+
+  const btnN = regionButtons?.querySelector('button[data-region="N"]');
+  const btnS = regionButtons?.querySelector('button[data-region="S"]');
+  const btnE = regionButtons?.querySelector('button[data-region="E"]');
+  const btnW = regionButtons?.querySelector('button[data-region="W"]');
+  if (btnN) btnN.style.display = "inline-block";
+  if (btnS) btnS.style.display = "inline-block";
+  if (btnE) btnE.style.display = "inline-block";
+  if (btnW) btnW.style.display = "inline-block";
+
+  setPrompt();
+  renderButtons();
+  updateProgress();
   requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
 }
 
-/* ===== SAVE ===== */
 function sendPayload(payload) {
   const body = JSON.stringify(payload);
   if (navigator.sendBeacon) {
@@ -415,60 +674,54 @@ async function finishTask() {
   if (hasFinished) return;
   hasFinished = true;
 
-  document.querySelectorAll("#regionButtons button").forEach(b => b.disabled = true);
+  document
+    .querySelectorAll("#axisButtons button, #regionButtons button")
+    .forEach((b) => (b.disabled = true));
   if (undoBtn) undoBtn.disabled = true;
   if (markerEl) markerEl.style.display = "none";
 
-  if (promptEl) promptEl.textContent = "Saving your responses…";
+  if (promptEl) promptEl.textContent = T.saving;
+  if (subPromptEl) subPromptEl.textContent = "";
 
   try {
     await saveAutomatically();
-
-    const pidEl = document.getElementById("pidDisplay");
-    if (pidEl) pidEl.textContent = participantId;
-
-    setSlide(8); // Debrief
+    setSlide(8);
   } catch (e) {
     console.error("SAVE FAILED:", e);
-    if (promptEl) promptEl.textContent = "Saving failed. Please contact the researcher.";
+    if (promptEl) promptEl.textContent = T.savingFailed;
   }
 }
 
-/* ===== TEXT: MT swap ===== */
+// zostawiamy jak było — dotyczy tylko MT
 function applySampleText() {
   if (SAMPLE === "MT") {
-    document.querySelectorAll("#slidePos .h1, #slideNeg .h1").forEach(el => {
+    document.querySelectorAll("#slidePos .h1, #slideNeg .h1").forEach((el) => {
       el.textContent = "Describe Maltese people";
     });
   }
 }
 
-/* ===== INIT ===== */
 (async () => {
   applySampleText();
   makeTraitInputs(posTraitsGrid, "pos");
   makeTraitInputs(negTraitsGrid, "neg");
 
-  // start
   setSlide(0);
   if (contentEl) contentEl.style.display = "none";
   if (progressWrap) progressWrap.style.display = "none";
 
-  // Cover consent -> demographics
   consentNextBtn.onclick = () => {
     if (!validateConsent()) return;
     setSlide(1);
     ageEl?.focus();
   };
 
-  // Demographics
   demoBackBtn.onclick = () => setSlide(0);
   demoNextBtn.onclick = () => {
     if (!readDemographics()) return;
-    setSlide(2); // instructions pos
+    setSlide(2);
   };
 
-  // Instructions Pos
   instrPosBackBtn.onclick = () => setSlide(1);
   instrPosNextBtn.onclick = () => {
     traitPosStartMs = performance.now();
@@ -477,20 +730,19 @@ function applySampleText() {
     document.getElementById("pos_1")?.focus();
   };
 
-  // Positive traits
   posBackBtn.onclick = () => setSlide(2);
   posNextBtn.onclick = () => {
-    const items = readTraits("pos");
-    if (!allFilled(items)) { if (posError) posError.style.display = "block"; return; }
-    if (posError) posError.style.display = "none";
+    const items = readTraitsRaw("pos");
+    const posLabel = (UI_LANG === "pl") ? "pozytywną" : "positive";
+    if (!validateAtLeastOne(items, posError, posLabel)) return;
 
     study.traits.positive.items = items;
+    study.traits.positive.count = countNonEmpty(items);
     study.traits.positive.rtMs = Math.round(performance.now() - traitPosStartMs);
 
-    setSlide(4); // instructions neg
+    setSlide(4);
   };
 
-  // Instructions Neg
   instrNegBackBtn.onclick = () => setSlide(3);
   instrNegNextBtn.onclick = () => {
     traitNegStartMs = performance.now();
@@ -499,36 +751,42 @@ function applySampleText() {
     document.getElementById("neg_1")?.focus();
   };
 
-  // Negative traitsS
   negBackBtn.onclick = () => setSlide(4);
   negNextBtn.onclick = () => {
-    const items = readTraits("neg");
-    if (!allFilled(items)) { if (negError) negError.style.display = "block"; return; }
-    if (negError) negError.style.display = "none";
+    const items = readTraitsRaw("neg");
+    const negLabel = (UI_LANG === "pl") ? "negatywną" : "negative";
+    if (!validateAtLeastOne(items, negError, negLabel)) return;
 
     study.traits.negative.items = items;
+    study.traits.negative.count = countNonEmpty(items);
     study.traits.negative.rtMs = Math.round(performance.now() - traitNegStartMs);
 
-    setSlide(6); // instructions map
+    setSlide(6);
   };
 
-  // Instructions Map
   instrMapBackBtn.onclick = () => setSlide(5);
   instrMapNextBtn.onclick = async () => {
-    setSlide(7); // map
+    setSlide(7);
 
     svg = await loadSVG();
-    EUROPE.forEach(c => paintCountry(c, null));
+    study.map.order.forEach((c) => paintCountry(c, null));
 
-    document.querySelectorAll("#regionButtons button").forEach(btn => {
-      btn.onclick = () => assign(btn.dataset.region);
+    document.querySelectorAll("#axisButtons button").forEach((btn) => {
+      btn.onclick = () => chooseAxis(btn.dataset.axis);
     });
+
+    document.querySelectorAll("#regionButtons button").forEach((btn) => {
+      btn.onclick = () => chooseSide(btn.dataset.region);
+    });
+
     if (undoBtn) undoBtn.onclick = undo;
 
     window.addEventListener("resize", () => {
       if (currentISO3) requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
     });
 
+    phase = "axis";
+    renderButtons();
     goNext();
   };
 })();
