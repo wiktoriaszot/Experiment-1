@@ -66,6 +66,19 @@ const COUNTRY_NAME = {
   BLR:"Belarus", UKR:"Ukraine", MDA:"Moldova"
 };
 
+// NOWE: polskie nazwy do UI
+const COUNTRY_NAME_PL = {
+  FRA:"Francja", BEL:"Belgia", DEU:"Niemcy", CHE:"Szwajcaria",
+  ITA:"Włochy", MLT:"Malta", ESP:"Hiszpania", PRT:"Portugalia",
+  GBR:"Wielka Brytania", IRL:"Irlandia", NLD:"Niderlandy",
+  DNK:"Dania", NOR:"Norwegia", SWE:"Szwecja", FIN:"Finlandia", ISL:"Islandia",
+  AUT:"Austria", CZE:"Czechy", SVK:"Słowacja", POL:"Polska", HUN:"Węgry",
+  SVN:"Słowenia", HRV:"Chorwacja", BIH:"Bośnia i Hercegowina", SRB:"Serbia",
+  MNE:"Czarnogóra", MKD:"Macedonia Północna", ALB:"Albania", GRC:"Grecja",
+  BGR:"Bułgaria", ROU:"Rumunia", LTU:"Litwa", LVA:"Łotwa", EST:"Estonia",
+  BLR:"Białoruś", UKR:"Ukraina", MDA:"Mołdawia"
+};
+
 const REGION_COLOR = { N:"#1039c1", S:"#d01212", E:"#eded35", W:"#35d40d" };
 const DEFAULT_COLOR = "#c9c9c9";
 const STRIPE_SIZE = 12;
@@ -416,10 +429,16 @@ function pickNextUnassigned() {
   return study.map.order.find((c) => !(c in study.map.responses)) || null;
 }
 
+// ZMIENIONE: nazwy kraju wg UI_LANG, "the" tylko w EN
 function setPrompt() {
   if (!currentISO3) return;
-  const name = COUNTRY_NAME[currentISO3];
-  const needsThe = (currentISO3 === "GBR" || currentISO3 === "NLD");
+
+  const dict = (UI_LANG === "pl") ? COUNTRY_NAME_PL : COUNTRY_NAME;
+  const name = dict[currentISO3] || currentISO3;
+
+  const needsThe =
+    UI_LANG === "en" && (currentISO3 === "GBR" || currentISO3 === "NLD");
+
   const label = needsThe ? `the ${name}` : name;
 
   const question =
@@ -673,6 +692,7 @@ async function finishTask() {
   }
 }
 
+// zostawiamy jak było — dotyczy tylko MT
 function applySampleText() {
   if (SAMPLE === "MT") {
     document.querySelectorAll("#slidePos .h1, #slideNeg .h1").forEach((el) => {
@@ -770,4 +790,3 @@ function applySampleText() {
     goNext();
   };
 })();
-
