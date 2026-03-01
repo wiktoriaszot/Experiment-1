@@ -20,9 +20,9 @@ const I18N = {
     needPolishNat: "Please enter Polish nationality for this version.",
     needMalteseNat: "Please enter Maltese nationality for this version.",
     atLeastOneTrait: (label) => `Please enter at least 1 ${label} trait (you can add up to 8).`,
-    mapQ_axis: "Choose an axis: North–South or East–West.",
-    mapQ_ns: "Is it North or South?",
-    mapQ_ew: "Is it East or West?",
+    mapQ_first: (name) => `Do you think ${name} is North, South, East, or West?`,
+    mapQ_second_ns: "Now choose the other direction: East or West.",
+    mapQ_second_ew: "Now choose the other direction: North or South.",
     saving: "Saving your responses…",
     savingFailed: "Saving failed. Please contact the researcher: wiktoria.szot.24@um.edu.mt"
   },
@@ -37,9 +37,8 @@ const I18N = {
     needPolishNat: "W tej wersji wpisz obywatelstwo polskie.",
     needMalteseNat: "W tej wersji wpisz obywatelstwo maltańskie.",
     atLeastOneTrait: (label) => `Wpisz co najmniej 1 cechę (${label}) (możesz podać maks. 8).`,
-    mapQ_axis: "Wybierz oś: Północ–Południe albo Wschód–Zachód.",
-    mapQ_ns: "Północ czy Południe?",
-    mapQ_ew: "Wschód czy Zachód?",
+    mapQ_first: (name) => `${name} to kraj będący przede wszystkim na`,
+    mapQ_second: (name, sideLoc) => `${name} leży na ${sideLoc} oraz na`,
     saving: "Zapisywanie odpowiedzi…",
     savingFailed: "Nie udało się zapisać danych. Skontaktuj się z autorem eksperymentu: wiktoria.szot.24@um.edu.mt"
   }
@@ -352,7 +351,7 @@ let currentISO3 = null;
 const historyStack = [];
 let hasFinished = false;
 
-let phase = "axis";
+let phase = "firstSide";
 let firstAxis = null;
 let firstSide = null;
 let axisStartMs = null;
@@ -441,12 +440,13 @@ function setPrompt() {
 
   const label = needsThe ? `the ${name}` : name;
 
+  const sideLoc = { N: "północy", S: "południu", E: "wschodzie", W: "zachodzie" };
+  const firstSideLoc = sideLoc[firstSide] || "";
+
   const question =
-    phase === "axis"
-      ? T.mapQ_axis
-      : phase === "firstSide"
-        ? (firstAxis === "NS" ? T.mapQ_ns : T.mapQ_ew)
-        : (firstAxis === "NS" ? T.mapQ_ew : T.mapQ_ns);
+    phase === "secondSide"
+      ? T.mapQ_second(label, firstSideLoc)
+      : T.mapQ_first(label);
 
   if (promptEl) promptEl.textContent = label;
   if (subPromptEl) {
@@ -458,8 +458,8 @@ function setPrompt() {
 
 function renderButtons() {
   if (!axisButtons || !regionButtons) return;
-  axisButtons.style.display = phase === "axis" ? "flex" : "none";
-  regionButtons.style.display = (phase === "firstSide" || phase === "secondSide") ? "flex" : "none";
+  axisButtons.style.display = "none";
+  regionButtons.style.display = (phase === "firstSide" || phase === "secondSide") ? "grid" : "none";
 }
 
 function configureSideButtonsForAxis(axis) {
@@ -481,6 +481,18 @@ function configureSideButtonsForAxis(axis) {
     btnE.style.display = "inline-block";
     btnW.style.display = "inline-block";
   }
+}
+
+function showAllSideButtons() {
+  const btnN = regionButtons?.querySelector('button[data-region="N"]');
+  const btnS = regionButtons?.querySelector('button[data-region="S"]');
+  const btnE = regionButtons?.querySelector('button[data-region="E"]');
+  const btnW = regionButtons?.querySelector('button[data-region="W"]');
+
+  if (btnN) btnN.style.display = "inline-block";
+  if (btnS) btnS.style.display = "inline-block";
+  if (btnE) btnE.style.display = "inline-block";
+  if (btnW) btnW.style.display = "inline-block";
 }
 
 function positionMarkerOnCountry(code) {
@@ -516,17 +528,18 @@ function goNext() {
     return;
   }
 
-  phase = "axis";
+  phase = "firstSide";
   firstAxis = null;
   firstSide = null;
   lastAxisRtMs = null;
   lastFirstSideRtMs = null;
   axisStartMs = performance.now();
-  firstSideStartMs = null;
+  firstSideStartMs = performance.now();
   secondSideStartMs = null;
 
   setPrompt();
   renderButtons();
+  showAllSideButtons();
   updateProgress();
   requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
 }
@@ -579,11 +592,16 @@ function chooseAxis(axis) {
 }
 
 function chooseSide(side) {
-  if (!currentISO3 || !firstAxis) return;
-
   if (phase === "firstSide") {
+    if (!currentISO3) return;
+    if (!["N", "S", "E", "W"].includes(side)) return;
+
+    const rtFirst = axisStartMs == null ? null : Math.round(performance.now() - axisStartMs);
     firstSide = side;
-    lastFirstSideRtMs = firstSideStartMs == null ? null : Math.round(performance.now() - firstSideStartMs);
+    firstAxis = (side === "N" || side === "S") ? "NS" : "EW";
+    lastAxisRtMs = rtFirst;
+    lastFirstSideRtMs = null;
+
     phase = "secondSide";
     setPrompt();
     renderButtons();
@@ -593,6 +611,7 @@ function chooseSide(side) {
   }
 
   if (phase === "secondSide") {
+    if (!currentISO3 || !firstAxis) return;
     const rtSecond = secondSideStartMs == null ? null : Math.round(performance.now() - secondSideStartMs);
     finalizeResponse(currentISO3, firstAxis, firstSide, side, {
       axisMs: lastAxisRtMs,
@@ -618,23 +637,16 @@ function undo() {
 
   currentISO3 = last.code;
 
-  phase = "axis";
+  phase = "firstSide";
   firstAxis = null;
   firstSide = null;
   lastAxisRtMs = null;
   lastFirstSideRtMs = null;
   axisStartMs = performance.now();
-  firstSideStartMs = null;
+  firstSideStartMs = performance.now();
   secondSideStartMs = null;
 
-  const btnN = regionButtons?.querySelector('button[data-region="N"]');
-  const btnS = regionButtons?.querySelector('button[data-region="S"]');
-  const btnE = regionButtons?.querySelector('button[data-region="E"]');
-  const btnW = regionButtons?.querySelector('button[data-region="W"]');
-  if (btnN) btnN.style.display = "inline-block";
-  if (btnS) btnS.style.display = "inline-block";
-  if (btnE) btnE.style.display = "inline-block";
-  if (btnW) btnW.style.display = "inline-block";
+  showAllSideButtons();
 
   setPrompt();
   renderButtons();
@@ -785,7 +797,7 @@ function applySampleText() {
       if (currentISO3) requestAnimationFrame(() => positionMarkerOnCountry(currentISO3));
     });
 
-    phase = "axis";
+    phase = "firstSide";
     renderButtons();
     goNext();
   };
