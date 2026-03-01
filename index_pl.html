@@ -265,11 +265,19 @@
       line-height: 1.5;
     }
 
-    #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 10px 0 6px 0; line-height:1.15; }
+    #prompt{ text-align:center; font-size:22px; font-weight:650; margin: 0 0 6px 0; line-height:1.15; }
     #subPrompt{ text-align:center; font-size:14px; color:#555; margin: 0 0 8px 0; }
 
-    #buttonRow{ display:flex; justify-content:center; align-items:center; gap:12px; margin: 6px 0 4px 0; flex-wrap:wrap; }
-    #regionButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+    #buttonRow{ display:flex; flex-direction:column; align-items:center; gap:10px; margin: 6px 0 4px 0; }
+    #regionButtons{
+      display:grid;
+      grid-template-columns: 90px 90px 90px;
+      grid-template-rows: auto auto auto;
+      gap:8px;
+      justify-items:center;
+      align-items:center;
+      width:286px;
+    }
     #axisButtons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
     .btnN{ background:#1039c1; color:#fff; border-color:#1039c1; }
@@ -277,9 +285,37 @@
     .btnE{ background:#eded35; color:#111; border-color:#c8c800; }
     .btnW{ background:#35d40d; color:#111; border-color:#2db60b; }
 
-    #undoBtn{ background:#fff; }
+    #regionButtons .btnN{ grid-column:2; grid-row:1; }
+    #regionButtons .btnW{ grid-column:1; grid-row:2; }
+    #regionButtons .btnE{ grid-column:3; grid-row:2; }
+    #regionButtons .btnS{ grid-column:2; grid-row:3; }
+
+    #undoBtn{ background:#fff; margin-top:2px; }
 
     #mapWrap{ position:relative; height:100%; max-width:1400px; margin:0 auto; }
+    #mapOverlay{
+      position:absolute;
+      left:18px;
+      top:18px;
+      z-index:12;
+      width:min(420px, 40vw);
+      text-align:center;
+      pointer-events:none;
+    }
+    #mapOverlayInner{
+      pointer-events:auto;
+      background:rgba(255,255,255,0.92);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px 16px 12px 16px;
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    @media (max-width: 900px){
+      #mapOverlay{ width:min(92vw, 520px); left:50%; transform:translateX(-50%); }
+    }
     #mapWrap svg{
       width:100%;
       height:100%;
@@ -310,6 +346,7 @@
       50%{box-shadow:0 0 0 10px rgba(255,50,120,0.1);}
       100%{box-shadow:0 0 0 4px rgba(255,50,120,0.25);}
     }
+
   </style>
 </head>
 
@@ -515,14 +552,18 @@
 
     <div class="slide centeredSlide" id="slideInstrMap">
       <div class="card">
-        <div class="h1">Przypisz kraje do kierunków</div>
+        <div class="h1">Przypisz kierunek do krajów europejskich</div>
         <div class="p">
-          Zobaczysz mapę Europy. Dla każdego kraju najpierw zdecyduj, czy lepiej pasuje do osi <strong>Północ–Południe</strong> czy <strong>Wschód–Zachód</strong>.
-          Następnie wybierz konkretny kierunek na tej osi (np. <strong>Północ</strong>), a na końcu wybierz kierunek na drugiej osi.
+          Zobaczysz mapę Europy. Dla każdego kraju zdecyduj, <strong>gdzie Twoim zdaniem przede wszystkim leży</strong>:
+          Północ / Południe / Wschód / Zachód. Chodzi o Twoje pierwsze wrażenie.
+          Następnie dokończ wybór na drugiej osi:
+          jeśli najpierw wybrałeś/łaś Północ lub Południe, wskaż Wschód albo Zachód;
+          jeśli najpierw wybrałeś/łaś Wschód lub Zachód, wskaż Północ albo Południe.
         </div>
         <ul class="infoList">
           <li>Nie ma poprawnych odpowiedzi — użyj własnego osądu.</li>
           <li>Staraj się oceniać każdy kraj niezależnie.</li>
+          <li>Przyciski są ułożone jak kompas, aby ułatwić wybór.</li>
           <li>Możesz użyć przycisku <strong>Cofnij</strong>, aby zmienić poprzednią odpowiedź.</li>
           <li>Wskaźnik postępu pokaże, ile już zostało wykonane.</li>
         </ul>
@@ -533,28 +574,7 @@
       </div>
     </div>
 
-    <div class="slide" id="slideMapTop">
-      <div id="prompt"></div>
-      <div id="subPrompt"></div>
-
-      <div id="buttonRow">
-        <div id="axisButtons">
-          <button class="ghost" data-axis="NS" type="button">Północ–Południe</button>
-          <button class="ghost" data-axis="EW" type="button">Wschód–Zachód</button>
-        </div>
-
-        <div id="regionButtons">
-          <button class="btnN" data-region="N" type="button">Północ</button>
-          <button class="btnS" data-region="S" type="button">Południe</button>
-          <button class="btnW" data-region="W" type="button">Zachód</button>
-          <button class="btnE" data-region="E" type="button">Wschód</button>
-        </div>
-
-        <button id="undoBtn" type="button">Cofnij</button>
-      </div>
-
-      <input type="hidden" id="mapData" value="">
-    </div>
+    <div class="slide" id="slideMapTop"></div>
 
     <div class="slide centeredSlide" id="slideDebrief">
       <div class="card">
@@ -567,6 +587,30 @@
 
   <div id="content">
     <div id="mapWrap">
+      <div id="mapOverlay">
+        <div id="mapOverlayInner">
+          <div id="prompt"></div>
+          <div id="subPrompt"></div>
+
+          <div id="buttonRow">
+            <div id="axisButtons">
+              <button class="ghost" data-axis="NS" type="button">Północ–Południe</button>
+              <button class="ghost" data-axis="EW" type="button">Wschód–Zachód</button>
+            </div>
+
+            <div id="regionButtons">
+              <button class="btnN" data-region="N" type="button">Północy</button>
+              <button class="btnS" data-region="S" type="button">Południu</button>
+              <button class="btnW" data-region="W" type="button">Zachodzie</button>
+              <button class="btnE" data-region="E" type="button">Wschodzie</button>
+            </div>
+
+            <button id="undoBtn" type="button">Cofnij</button>
+          </div>
+
+          <input type="hidden" id="mapData" value="">
+        </div>
+      </div>
       <div id="marker" aria-hidden="true"></div>
     </div>
   </div>
