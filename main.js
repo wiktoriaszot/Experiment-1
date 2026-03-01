@@ -156,7 +156,7 @@ const undoBtn = document.getElementById("undoBtn");
 const mapWrap = document.getElementById("mapWrap");
 const markerEl = document.getElementById("marker");
 const mapDataEl = document.getElementById("mapData");
-const contentEl = document.getElementById("content");
+const contentEl = document.getElementById("mapContent");
 
 const axisButtons = document.getElementById("axisButtons");
 const regionButtons = document.getElementById("regionButtons");
