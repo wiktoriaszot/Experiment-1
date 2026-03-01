@@ -316,6 +316,27 @@
     @media (max-width: 900px){
       #mapOverlay{ width:min(92vw, 520px); left:50%; transform:translateX(-50%); }
     }
+    @media (max-width: 560px){
+      #mapOverlay{
+        left:50%;
+        top:8px;
+        transform:translateX(-50%);
+        width:calc(100vw - 24px);
+      }
+      #mapOverlayInner{
+        padding:10px 12px 10px 12px;
+        border-radius:14px;
+      }
+      #prompt{ font-size:19px; }
+      #subPrompt{ font-size:13px; }
+      #regionButtons{
+        grid-template-columns: 84px 84px 84px;
+        gap:6px;
+        width:260px;
+      }
+      #regionButtons button{ padding:8px 10px; font-size:13px; }
+      #undoBtn{ padding:8px 12px; font-size:13px; }
+    }
     #mapWrap svg{
       width:100%;
       height:100%;
@@ -599,24 +620,3 @@
             </div>
 
             <div id="regionButtons">
-              <button class="btnN" data-region="N" type="button">Północy</button>
-              <button class="btnS" data-region="S" type="button">Południu</button>
-              <button class="btnW" data-region="W" type="button">Zachodzie</button>
-              <button class="btnE" data-region="E" type="button">Wschodzie</button>
-            </div>
-
-            <button id="undoBtn" type="button">Cofnij</button>
-          </div>
-
-          <input type="hidden" id="mapData" value="">
-        </div>
-      </div>
-      <div id="marker" aria-hidden="true"></div>
-    </div>
-  </div>
-
-  <script>window.SAMPLE = "PL";</script>
-  <script>window.UI_LANG = "pl";</script>
-  <script src="main.js"></script>
-</body>
-</html>
