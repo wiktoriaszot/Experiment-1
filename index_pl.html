@@ -30,7 +30,7 @@
     }
 
     #topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--line); padding: 6px 12px; }
-    #content{ flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
+    #content{ display:none; flex:1 1 auto; min-height:0; padding: 10px 12px 12px 12px; box-sizing:border-box; }
 
     #headerRow{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
     #titleBlock{ display:flex; flex-direction:column; gap:6px; }
@@ -629,3 +629,24 @@
             </div>
 
             <div id="regionButtons">
+              <button class="btnN" data-region="N" type="button">Północy</button>
+              <button class="btnS" data-region="S" type="button">Południu</button>
+              <button class="btnW" data-region="W" type="button">Zachodzie</button>
+              <button class="btnE" data-region="E" type="button">Wschodzie</button>
+            </div>
+
+            <button id="undoBtn" type="button">Cofnij</button>
+          </div>
+
+          <input type="hidden" id="mapData" value="">
+        </div>
+      </div>
+      <div id="marker" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>window.SAMPLE = "PL";</script>
+  <script>window.UI_LANG = "pl";</script>
+  <script src="main.js"></script>
+</body>
+</html>
