@@ -28,7 +28,7 @@ const settings = {
   dataLanguage: "en",
   condition: resolvedCondition,
   articleContent: conditionArticles[resolvedCondition],
-  totalCards: 1,
+  totalCards: 64,
   maxCategories: 6,
   criterionCorrectInRow: 10,
   ruleSequence: ["C", "S", "N", "C", "S", "N"],
