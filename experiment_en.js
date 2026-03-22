@@ -1,5 +1,5 @@
 (function () {
-  const t = () => translations.en;
+  const t = () => translations[settings.language] || translations.en;
   const referenceCards = [
     { index: 0, color: "red", shape: "triangle", number: 1, label: "Card 0" },
     { index: 1, color: "green", shape: "star", number: 2, label: "Card 1" },
@@ -12,32 +12,38 @@
     { index: 2, color: "yellow", shape: "diamond", number: 3, correctChoice: 2, label: "Training Card 2" }
   ];
   const polishTraits = [
-    { id: "goscinnosc", label: "Hospitality" },
-    { id: "pracowitosc", label: "Hard work" },
-    { id: "rodzinnosc", label: "Family orientation" },
-    { id: "wytrwalosc", label: "Perseverance" },
-    { id: "pomocnosc", label: "Helpfulness" },
-    { id: "zaradnosc", label: "Resourcefulness" },
-    { id: "zawisc", label: "Envy / jealousy" },
-    { id: "pesymizm", label: "Pessimism" },
-    { id: "narzekanie", label: "Complaining" },
-    { id: "nietolerancyjnosc", label: "Intolerance" },
-    { id: "klotliwosc", label: "Quarrelsomeness" },
-    { id: "alkoholizm", label: "Tendency toward alcoholism" }
+    { id: "goscinnosc", label: "Gościnność" },
+    { id: "pracowitosc", label: "Pracowitość" },
+    { id: "rodzinnosc", label: "Rodzinność" },
+    { id: "wytrwalosc", label: "Wytrwałość" },
+    { id: "pomocnosc", label: "Uczynność / pomocność" },
+    { id: "zaradnosc", label: "Zaradność" },
+    { id: "zawisc", label: "Zawiść / zazdrość" },
+    { id: "pesymizm", label: "Pesymizm" },
+    { id: "narzekanie", label: "Narzekanie" },
+    { id: "nietolerancyjnosc", label: "Nietolerancyjność" },
+    { id: "klotliwosc", label: "Kłótliwość" },
+    { id: "alkoholizm", label: "Skłonność do alkoholizmu" }
   ];
   const otherEuropeRegions = [
-    { id: "north", keyPrefix: "north_europe", label: "Northern Europeans", examples: "e.g. Sweden, Norway, Finland, Denmark" },
-    { id: "south", keyPrefix: "south_europe", label: "Southern Europeans", examples: "e.g. Italy, Spain, Malta, Portugal" },
-    { id: "west", keyPrefix: "west_europe", label: "Western Europeans", examples: "e.g. Germany, France, the Netherlands, Belgium" },
-    { id: "east", keyPrefix: "east_europe", label: "Eastern Europeans", examples: "e.g. Ukraine, Czechia, Hungary, Romania" }
+    { id: "north", keyPrefix: "north_europe", label: "Europejczyków z Europy Północnej", examples: "np. Szwecja, Norwegia, Finlandia, Dania" },
+    { id: "south", keyPrefix: "south_europe", label: "Europejczyków z Europy Południowej", examples: "np. Włochy, Hiszpania, Malta, Portugalia" },
+    { id: "west", keyPrefix: "west_europe", label: "Europejczyków z Europy Zachodniej", examples: "np. Niemcy, Francja, Holandia, Belgia" },
+    { id: "east", keyPrefix: "east_europe", label: "Europejczyków z Europy Wschodniej", examples: "np. Ukraina, Czechy, Węgry, Rumunia" }
   ];
-  const activeCards = cards
+  const selectedTrialNumberSet = Array.isArray(settings.selectedTrialNumbers) && settings.selectedTrialNumbers.length
+    ? new Set(settings.selectedTrialNumbers)
+    : null;
+  const availableCards = cards
     .slice()
     .sort((a, b) => a.trialNumber - b.trialNumber)
-    .slice(0, Math.min(settings.totalCards || cards.length, cards.length));
+    .filter(card => !selectedTrialNumberSet || selectedTrialNumberSet.has(card.trialNumber));
+  const activeCards = availableCards
+    .slice(0, Math.min(settings.totalCards || availableCards.length, availableCards.length));
   const totalTrials = activeCards.length;
   const ruleNames = { C: "Color", S: "Shape", N: "Number" };
   const ruleColumnNames = { C: "colorRule", S: "shapeRule", N: "numberRule" };
+  const ruleCycleNumbers = { C: 1, S: 2, N: 3 };
 
   function randomSubjectId(length = 15) {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
@@ -96,8 +102,69 @@
     a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
 
+  function downloadJSON(filename, data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  function buildSheetsFields(payload) {
+    return new URLSearchParams({
+      source: "card_sorting",
+      sample: settings.sample || "",
+      uiLang: settings.uiLang || "",
+      date: payload.date,
+      participantId: payload.participantId,
+      condition: payload.condition || "",
+      sessionCreatedAt: payload.sessionCreatedAt || "",
+      consentGiven: payload.consent && payload.consent.given ? "1" : "0",
+      totalTrials: String(payload.summary && payload.summary.STAT_nr_of_trials || 0),
+      categoriesAchieved: String(payload.summary && payload.summary.STAT_category_achieved || 0),
+      responseData: JSON.stringify(payload)
+    });
+  }
+
+  async function savePayloadToGoogleSheets(payload) {
+    if (!settings.saveUrl) {
+      return { ok: false, skipped: true, message: "Missing save URL." };
+    }
+
+    const body = buildSheetsFields(payload);
+
+    try {
+      const response = await fetch(settings.saveUrl, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body
+      });
+      if (!response.ok) {
+        return { ok: false, message: `HTTP ${response.status}` };
+      }
+      return { ok: true, confirmed: true, message: "Saved to Google Sheets." };
+    } catch (error) {
+      if (navigator.sendBeacon && navigator.sendBeacon(settings.saveUrl, body)) {
+        return { ok: true, confirmed: false, message: "Save request queued." };
+      }
+
+      try {
+        await fetch(settings.saveUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body
+        });
+        return { ok: true, confirmed: false, message: "Save request sent without confirmation." };
+      } catch (fallbackError) {
+        return { ok: false, message: fallbackError && fallbackError.message ? fallbackError.message : (error && error.message ? error.message : "Save failed.") };
+      }
+    }
+  }
+
   const state = {
     subject: randomSubjectId(15),
+    sessionCreatedAt: new Date().toISOString(),
     startedAt: null,
     phase: "consent",
     consentGiven: false,
@@ -128,12 +195,21 @@
   let consentShownAt = null;
   let demographicsShownAt = null;
 
-  function uiText(_polish, fallback) {
-    return fallback;
+  function uiText(polish, fallback) {
+    return settings.language === "pl" ? polish : fallback;
   }
 
   function nextTarget() { return activeCards[state.trialIndex] || null; }
   function nextTrainingTarget() { return trainingCards[state.trainingIndex]; }
+  function completedCategoriesForTrial(trialIndex) {
+    return Math.min(Math.floor(trialIndex / settings.trialsPerRule), settings.maxCategories);
+  }
+
+  function syncMainRuleState(trialIndex = state.trialIndex) {
+    state.categoryCompleted = completedCategoriesForTrial(trialIndex);
+    state.currentRuleIdx = Math.min(state.categoryCompleted, settings.ruleSequence.length - 1);
+    state.currentRule = settings.ruleSequence[state.currentRuleIdx] || null;
+  }
 
   function renderConsentPage() {
     state.phase = "consent";
@@ -146,13 +222,13 @@
           <img src="logo.png" alt="University crest" class="brand-logo" onerror="this.style.display='none'" />
         </div>
 
-        <h1 class="hero-title">Between Nation and Europe</h1>
+        <h1 class="hero-title">Między narodem a Europą</h1>
 
         <div class="hero-meta">
-          <div>Institute of Cognitive Science, Faculty of Media and Social Sciences</div>
-          <div>University of Malta</div>
-          <div>Student: Wiktoria Szot • Supervisor: Prof. Gordon Sammut</div>
-          <div>Contact: wiktoria.szot.24@um.edu.mt</div>
+          <div>Instytut Kognitywistyki, Wydział Mediów i Nauk Społecznych</div>
+          <div>Uniwersytet Maltański</div>
+          <div>Studentka: Wiktoria Szot • Promotor: Prof. Gordon Sammut</div>
+          <div>Kontakt: wiktoria.szot.24@um.edu.mt</div>
         </div>
         <div class="consent-frame-wrap">
           <div class="consent-frame-scroll">
@@ -160,58 +236,58 @@
             </div>
 
             <div class="consent-inner-box">
-              <div class="consent-section-title">Purpose of the study</div>
-              <p>This study examines how people process information and how Poles perceive different regions of Europe.</p>
+              <div class="consent-section-title">Cel badania</div>
+              <p>Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
 
-              <div class="consent-section-title">Participation criteria</div>
-              <p>Participants must be at least 18 years old and hold Polish citizenship.</p>
+              <div class="consent-section-title">Kryteria udziału</div>
+              <p>Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
 
-              <div class="consent-section-title">Procedure</div>
-              <p>During the study, participants will complete a brief card-matching task. Four cards and one additional card will appear on the screen, and the additional card must be matched to one of the four reference cards. Afterward, participants will be asked to rate how well different traits describe Poles and people from other regions of Europe using a 7-point Likert scale.</p>
+              <div class="consent-section-title">Przebieg badania</div>
+              <p>W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
 
-              <p>The study is a one-time participation and should take about 20 minutes.</p>
+              <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
 
-              <div class="consent-section-title">Voluntary participation</div>
-              <p>Participation in the study is entirely voluntary. Participants may stop taking part at any time without giving a reason and without any negative consequences.</p>
+              <div class="consent-section-title">Dobrowolność udziału</div>
+              <p>Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
 
-              <div class="consent-section-title">Confidentiality</div>
-              <p>All information collected in the study will remain confidential and will be coded using a unique participant identifier. Data will be stored in Google Sheets and used exclusively for scientific purposes. Study results may be presented only in the form of aggregated statistical analyses.</p>
+              <div class="consent-section-title">Poufność danych</div>
+              <p>Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
 
-              <p>Participants have the right to access their data and request its deletion in accordance with applicable personal data protection regulations.</p>
+              <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
 
-              <div class="consent-section-title">Risks and benefits</div>
-              <p>Participation in the study does not involve any foreseeable risk. Participants will receive financial compensation for taking part.</p>
+              <div class="consent-section-title">Ryzyka i korzyści</div>
+              <p>Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
             </div>
           </div>
         </div>
 
         <label class="consent-check consent-check-large">
           <input id="consent-checkbox" type="checkbox" />
-          <span>I confirm that I am at least 18 years old and agree to participate in this study.</span>
+          <span>Potwierdzam, że mam ukończone 18 lat i wyrażam zgodę na udział w badaniu.</span>
         </label>
 
         <div id="consent-error" class="form-error" role="alert" aria-live="polite"></div>
 
         <div class="button-row center-row consent-button-row">
-          <button id="consent-next-btn">Continue</button>
+          <button id="consent-next-btn">Dalej</button>
         </div>
       </div></div>`;
 
     const heroMeta = app.querySelector(".hero-meta");
     if (heroMeta) {
       heroMeta.innerHTML = [
-        "Student: Wiktoria Szot",
-        "Supervisor: Prof. Gordon Sammut",
-        "Contact: wiktoria.szot.24@um.edu.mt"
+        "Studentka: Wiktoria Szot",
+        "Promotor: Prof. Gordon Sammut",
+        "Kontakt: wiktoria.szot.24@um.edu.mt"
       ].map(line => `<div>${line}</div>`).join("");
     }
 
     const consentHead = app.querySelector(".consent-frame-head");
     if (consentHead) {
       consentHead.innerHTML = [
-        "University of Malta",
-        "Faculty of Media and Social Sciences",
-        "Institute of Cognitive Science"
+        "Uniwersytet Malta\u0144ski",
+        "Wydzia\u0142 Medi\u00f3w i Nauk Spo\u0142ecznych",
+        "Instytut Kognitywistyki"
       ].map(line => `<div>${line}</div>`).join("");
     }
 
@@ -219,21 +295,21 @@
     if (consentBox) {
       consentBox.innerHTML = `
         <div class="consent-doc">
-          <p><strong>Purpose of the study:</strong> This study examines how people process information and how Poles perceive different regions of Europe.</p>
+          <p><strong>Cel badania:</strong> Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
 
-          <p><strong>Participation criteria:</strong> Participants must be at least 18 years old and hold Polish citizenship.</p>
+          <p><strong>Kryteria udziału:</strong> Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
 
-          <p><strong>Procedure:</strong> During the study, participants will complete a brief card-matching task. Four cards and one additional card will appear on the screen, and the additional card must be matched to one of the four reference cards. Afterward, participants will be asked to rate how well different traits describe Poles and people from other regions of Europe using a 7-point Likert scale.</p>
+          <p><strong>Przebieg:</strong> W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
 
-          <p>The study is a one-time participation and should take about 20 minutes.</p>
+          <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
 
-          <p><strong>Voluntary participation:</strong> Participation in the study is entirely voluntary. Participants may stop taking part at any time without giving a reason and without any negative consequences.</p>
+          <p><strong>Dobrowolność udziału:</strong> Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
 
-          <p><strong>Confidentiality:</strong> All information collected in the study will remain confidential and will be coded using a unique participant identifier. Data will be stored in Google Sheets and used exclusively for scientific purposes. Study results may be presented only in the form of aggregated statistical analyses.</p>
+          <p><strong>Poufność danych:</strong> Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
 
-          <p>Participants have the right to access their data and request its deletion in accordance with applicable personal data protection regulations.</p>
+          <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
 
-          <p><strong>Risks and benefits:</strong> Participation in the study does not involve any foreseeable risk. Participants will receive financial compensation for taking part.</p>
+          <p><strong>Ryzyka i korzyści:</strong> Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
         </div>`;
     }
 
@@ -241,7 +317,7 @@
       const checkbox = document.getElementById("consent-checkbox");
       const error = document.getElementById("consent-error");
       if (!checkbox.checked) {
-        error.textContent = "To continue, please confirm consent to participate.";
+        error.textContent = "Aby przejść dalej, zaznacz zgodę na udział w badaniu.";
         return;
       }
 
@@ -262,30 +338,30 @@
     app.className = "";
     app.innerHTML = `
       <div class="screen"><div class="panel demographics-panel">
-        <h1 class="center">${uiText("Demographic information", "Demographic information")}</h1>
-        <p class="center">Please complete the short form before continuing.</p>
+        <h1 class="center">${uiText("Dane demograficzne", "Demographic information")}</h1>
+        <p class="center">${uiText("Przed przej\u015bciem dalej uzupe\u0142nij kr\u00f3tki formularz.", "Please complete the short form before continuing.")}</p>
 
         <div class="demographics-form">
           <label class="demographics-field">
-            <span>${uiText("Age", "Age")}</span>
+            <span>${uiText("Wiek", "Age")}</span>
             <input id="age-input" type="number" min="18" max="120" inputmode="numeric" />
           </label>
 
           <label class="demographics-field">
             <span>${uiText("P\u0142e\u0107", "Gender")}</span>
             <select id="gender-select">
-              <option value="">${uiText("Select", "Select")}</option>
-              <option value="kobieta">${uiText("Woman", "Woman")}</option>
+              <option value="">${uiText("Wybierz", "Select")}</option>
+              <option value="kobieta">${uiText("Kobieta", "Woman")}</option>
               <option value="m\u0119\u017cczyzna">${uiText("M\u0119\u017cczyzna", "Man")}</option>
             </select>
           </label>
 
           <label class="demographics-field">
-            <span>${uiText("Citizenship", "Citizenship")}</span>
+            <span>${uiText("Obywatelstwo", "Citizenship")}</span>
             <select id="citizenship-select">
-              <option value="">${uiText("Select", "Select")}</option>
-              <option value="polskie">${uiText("Polish", "Polish")}</option>
-              <option value="inne">${uiText("Other", "Other")}</option>
+              <option value="">${uiText("Wybierz", "Select")}</option>
+              <option value="polskie">${uiText("Polskie", "Polish")}</option>
+              <option value="inne">${uiText("Inne", "Other")}</option>
             </select>
           </label>
         </div>
@@ -293,8 +369,8 @@
         <div id="demographics-error" class="form-error" role="alert" aria-live="polite"></div>
 
         <div class="button-row center-row">
-          <button id="demographics-back-btn" type="button">Back</button>
-          <button id="demographics-next-btn">Continue</button>
+          <button id="demographics-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
+          <button id="demographics-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
 
@@ -311,15 +387,15 @@
 
       const ageNumber = Number(age);
       if (!age || !Number.isInteger(ageNumber) || ageNumber < 18 || ageNumber > 120) {
-        error.textContent = uiText("Enter a valid age (18–120).", "Enter a valid age (18-120).");
+        error.textContent = uiText("Podaj poprawny wiek (18-120 lat).", "Enter a valid age (18-120).");
         return;
       }
       if (!gender) {
-        error.textContent = uiText("Select p\u0142e\u0107.", "Select gender.");
+        error.textContent = uiText("Wybierz p\u0142e\u0107.", "Select gender.");
         return;
       }
       if (!citizenship) {
-        error.textContent = uiText("Select obywatelstwo.", "Select citizenship.");
+        error.textContent = uiText("Wybierz obywatelstwo.", "Select citizenship.");
         return;
       }
       if (citizenship !== "polskie") {
@@ -341,15 +417,21 @@
   function renderWelcome() {
     const app = document.getElementById("app");
     app.className = "";
-    const welcomeTitle = t().welcome;
-    const welcomeParagraphs = [t().intro1, t().intro2, t().intro3, t().intro4].filter(Boolean);
+    const welcomeTitle = settings.language === "pl" ? "Sortowanie kart" : t().welcome;
+    const welcomeParagraphs = settings.language === "pl"
+      ? [
+          "W tym zadaniu u góry ekranu zobaczysz cztery karty. Różnią się one liczbą, kolorem i kształtem.",
+          "Niżej będzie pojawiać się nowa karta. Twoim zadaniem jest zdecydować, do której karty u góry ona pasuje.",
+          "Przed rozpoczęciem właściwego eksperymentu zostaną przeprowadzone trzy próby treningowe, których celem będzie zapoznanie się z przebiegiem zadania."
+        ]
+      : [t().intro1, t().intro2, t().intro3, t().intro4].filter(Boolean);
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h1>${welcomeTitle}</h1>
         ${welcomeParagraphs.map(text => `<p>${text}</p>`).join("")}
         <div class="button-row center-row">
-          <button id="welcome-back-btn" type="button">Back</button>
-          <button id="start-btn">Continue</button>
+          <button id="welcome-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
+          <button id="start-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
     document.getElementById("welcome-back-btn").addEventListener("click", renderDemographics);
@@ -362,10 +444,10 @@
     state.phase = "training_intro";
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h1>${uiText("Training session", "Training session")}</h1>
-        <p>Three practice trials will begin next.</p>
-        <p>They will not be included in the collected data. They are only meant to familiarize you with the task.</p>
-        <button id="training-start-btn">${uiText("Start training", "Start training")}</button>
+        <h1>${uiText("Sesja treningowa", "Training session")}</h1>
+        <p>${uiText("Za chwilę rozpoczną się 3 próby treningowe.", "Three practice trials will begin next.")}</p>
+        <p>${uiText("Nie będą one wliczane do zbieranych danych, służą tylko do zapoznania się z przebiegiem zadania.", "They will not be included in the collected data. They are only meant to familiarize you with the task.")}</p>
+        <button id="training-start-btn">${uiText("Rozpocznij trening", "Start training")}</button>
       </div></div>`;
     document.getElementById("training-start-btn").addEventListener("click", startTraining);
   }
@@ -376,9 +458,9 @@
     state.phase = "main_intro";
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h1>${uiText("End of training", "Training complete")}</h1>
-        <p>The practice session is complete.</p>
-        <p>The main task starts now, and responses will be saved from this point onward.</p>
+        <h1>${uiText("Koniec treningu", "Training complete")}</h1>
+        <p>${uiText("Sesja treningowa została zakończona.", "The practice session is complete.")}</p>
+        <p>${uiText("Teraz rozpoczyna się właściwy eksperyment.", "The main task starts now and responses will be saved in the results from this point onward.")}</p>
         <button id="main-start-btn">${t().begin}</button>
       </div></div>`;
     document.getElementById("main-start-btn").addEventListener("click", startTask);
@@ -389,7 +471,7 @@
     app.className = "";
     const isTraining = mode === "training";
     const metaLabel = isTraining
-      ? `Practice trial <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel} <strong>${trainingCards.length}</strong>`
+      ? `${uiText("Próba treningowa", "Practice trial")} <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel} <strong>${trainingCards.length}</strong>`
       : `${t().trialLabel} <strong>${state.trialIndex + 1}</strong> ${t().ofLabel} <strong>${totalTrials}</strong>`;
     app.innerHTML = `
       <div class="screen"><div class="panel">
@@ -426,6 +508,7 @@
       return;
     }
 
+    syncMainRuleState();
     const target = nextTarget();
     const rt = Math.round(performance.now() - state.startedAt);
     const correctCard = target[ruleColumnNames[state.currentRule]];
@@ -446,6 +529,8 @@
     if (correct) state.correctInRow += 1;
     else { state.correctInRow = 0; state.totalErrors += 1; }
 
+    const categoriesCompletedAfterTrial = completedCategoriesForTrial(state.trialIndex + 1);
+
     const trial = {
       subject: state.subject,
       condition: settings.condition || "",
@@ -457,8 +542,10 @@
       card_number: target.trialNumber,
       correct: correct,
       correct_in_row: state.correctInRow,
-      number_of_rule: state.currentRuleIdx + 1,
-      category_completed: state.categoryCompleted,
+      active_rule: state.currentRule || "",
+      active_rule_label: ruleNames[state.currentRule] || "",
+      number_of_rule: ruleCycleNumbers[state.currentRule] || "",
+      category_completed: categoriesCompletedAfterTrial,
       applied_rule: appliedRule,
       perseverative_error: perseverativeError,
       perseverative_response: 0,
@@ -472,7 +559,8 @@
       trial_type: "card_sort",
       test_part: "task",
       stimulus: `${target.number}_${target.color}_${target.shape}`,
-      choice: choice
+      choice: choice,
+      rt_ms: rt
     };
 
     if (state.trials.length) {
@@ -482,18 +570,13 @@
 
     state.trials.push(trial);
     renderTask(target, correct ? t().correct : t().wrong, correct ? "correct" : "wrong", choice, "main");
-
-    if (state.correctInRow === settings.criterionCorrectInRow) {
-      state.categoryCompleted += 1;
-      state.correctInRow = 0;
-      state.currentRuleIdx += 1;
-      state.currentRule = settings.ruleSequence[state.currentRuleIdx] || null;
-    }
-    state.trials[state.trials.length - 1].category_completed = state.categoryCompleted;
+    state.categoryCompleted = categoriesCompletedAfterTrial;
+    if ((state.trialIndex + 1) % settings.trialsPerRule === 0) state.correctInRow = 0;
 
     window.setTimeout(() => {
       state.trialIndex += 1;
-      if (state.trialIndex >= totalTrials || state.categoryCompleted >= settings.maxCategories) endTask();
+      syncMainRuleState();
+      if (state.trialIndex >= totalTrials) endTask();
       else { state.startedAt = performance.now(); renderTask(nextTarget(), "", "", null, "main"); }
     }, 750);
   }
@@ -547,26 +630,99 @@
     }, polandColumns);
   }
 
-  function finalRows() {
-    const summary = buildSummary();
-    const ratings = traitRatingsColumns();
-    return state.trials.map(row => Object.assign({}, row, summary, ratings));
+  function finalPayload() {
+    const exportedTrials = state.trials.map(trial => ({
+      card_number: trial.card_number,
+      correct: trial.correct,
+      correct_in_row: trial.correct_in_row,
+      active_rule: trial.active_rule,
+      active_rule_label: trial.active_rule_label,
+      number_of_rule: trial.number_of_rule,
+      category_completed: trial.category_completed,
+      applied_rule: trial.applied_rule,
+      perseverative_error: trial.perseverative_error,
+      perseverative_response: trial.perseverative_response,
+      non_perseverative_error: trial.non_perseverative_error,
+      failure_to_maintain: trial.failure_to_maintain,
+      total_errors: trial.total_errors,
+      correct_card: trial.correct_card,
+      color_rule: trial.color_rule,
+      shape_rule: trial.shape_rule,
+      number_rule: trial.number_rule,
+      trial_type: trial.trial_type,
+      test_part: trial.test_part,
+      stimulus: trial.stimulus,
+      choice: trial.choice,
+      rt_ms: trial.rt_ms
+    }));
+
+    return {
+      date: new Date().toISOString(),
+      participantId: state.subject,
+      condition: settings.condition,
+      sample: settings.sample,
+      uiLang: settings.uiLang,
+      language: settings.language,
+      dataLanguage: settings.dataLanguage,
+      sessionCreatedAt: state.sessionCreatedAt,
+      consent: {
+        given: state.consentGiven,
+        at: state.consentAt,
+        rtMs: state.consentRtMs
+      },
+      demographics: {
+        at: state.demographicsAt,
+        rtMs: state.demographicsRtMs,
+        age: state.age,
+        gender: state.gender,
+        citizenship: state.citizenship
+      },
+      traitRatings: {
+        at: state.traitRatingsAt,
+        rtMs: state.traitRatingsRtMs,
+        poland: state.traitRatings,
+        regions: state.regionTraitRatings,
+        regionRtMs: state.regionTraitRatingsRtMs,
+        regionAt: state.regionTraitRatingsAt
+      },
+      summary: buildSummary(),
+      trials: exportedTrials
+    };
+  }
+
+  function finalRows(payload) {
+    return [{
+      date: payload.date,
+      condition: payload.condition,
+      participantId: payload.participantId,
+      responseData: JSON.stringify(payload)
+    }];
   }
 
   function renderCompletionScreen() {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "end";
-    const rows = finalRows();
-    const filename = `CardSorting_${state.subject}_output.csv`;
+    const payload = finalPayload();
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h2>${t().endTitle}</h2>
-        <p>${t().endBody}</p>
-        <button id="download-btn">${t().download}</button>
+        <p id="save-status" aria-live="polite">Trwa zapisywanie danych...</p>
       </div></div>`;
-    if (settings.autoDownloadCSV) setTimeout(() => downloadCSV(filename, rows), 200);
-    document.getElementById("download-btn").addEventListener("click", () => downloadCSV(filename, rows));
+
+    const saveStatus = document.getElementById("save-status");
+
+    savePayloadToGoogleSheets(payload).then(result => {
+      if (result.ok && result.confirmed) {
+        saveStatus.textContent = "Dane zostały zapisane, dziękuję za udział!";
+      } else if (result.ok) {
+        saveStatus.textContent = "Żądanie zapisu zostało wysłane. Proszę chwilę poczekać.";
+      } else if (result.skipped) {
+        saveStatus.textContent = "Brak adresu zapisu do Google Sheets.";
+      } else {
+        saveStatus.textContent = `Nie udało się zapisać danych: ${result.message}`;
+      }
+    });
   }
 
   function renderArticleScreen() {
@@ -577,14 +733,14 @@
     state.phase = "article";
     app.innerHTML = `
       <div class="screen article-screen"><div class="panel article-panel">
-        <h2 class="center">Read the text carefully</h2>
+        <h2 class="center">Przeczytaj uważnie tekst</h2>
         <div class="article-text-wrap">
           ${articleHeadline}
           <p>${article.body}</p>
         </div>
         <div class="button-row center-row">
-          <button id="article-back-btn" type="button">Back</button>
-          <button id="article-next-btn">Continue</button>
+          <button id="article-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
+          <button id="article-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
     document.getElementById("article-back-btn").addEventListener("click", endTask);
@@ -597,13 +753,13 @@
     state.phase = "final_task_intro";
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h2>Final task</h2>
-        <p>In the final task, you will be presented with 12 traits: 6 positive and 6 negative.</p>
-        <p>Your task will be to rate the extent to which each of these traits is characteristic of Poles.</p>
-        <p>You will respond using a 7-point Likert scale, where <strong>1</strong> means <strong>strongly disagree</strong> and <strong>7</strong> means <strong>strongly agree</strong>.</p>
+        <h2>Ostatnie zadanie</h2>
+        <p>W ostatnim zadaniu zostanie podanych 12 cech: 6 pozytywnych i 6 negatywnych.</p>
+        <p>Twoim zadaniem będzie ocenić, w jakim stopniu każda z tych cech jest charakterystyczna dla Polaków.</p>
+        <p>Odpowiedzi będziesz zaznaczać na 7-stopniowej skali Likerta, gdzie <strong>1</strong> oznacza <strong>zdecydowanie nie zgadzam się</strong>, a <strong>7</strong> oznacza <strong>zdecydowanie się zgadzam</strong>.</p>
         <div class="button-row center-row">
-          <button id="final-task-intro-back-btn" type="button">Back</button>
-          <button id="final-task-intro-next-btn">Continue</button>
+          <button id="final-task-intro-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
+          <button id="final-task-intro-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
     document.getElementById("final-task-intro-back-btn").addEventListener("click", renderArticleScreen);
@@ -625,7 +781,7 @@
           <table class="trait-table">
             <thead>
               <tr>
-                <th>Trait</th>
+                <th>Cecha</th>
                 ${scales.map(value => `<th>${value}</th>`).join("")}
               </tr>
             </thead>
@@ -647,7 +803,7 @@
         </div>
         <div id="trait-error" class="form-error" role="alert" aria-live="polite"></div>
         <div class="button-row center-row">
-          <button id="trait-next-btn">${nextLabel || "Continue"}</button>
+          <button id="trait-next-btn">${nextLabel || uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
 
@@ -656,7 +812,7 @@
       for (const trait of polishTraits) {
         const checked = document.querySelector(`input[name="trait-${trait.id}"]:checked`);
         if (!checked) {
-          document.getElementById("trait-error").textContent = "Rate all traits before continuing.";
+          document.getElementById("trait-error").textContent = "Oceń wszystkie cechy, aby przejść dalej.";
           return;
         }
         nextRatings[trait.id] = checked.value;
@@ -668,8 +824,8 @@
   function renderPolishTraitsTask() {
     renderTraitRatingsTask({
       phase: "trait_ratings",
-      title: "Rate how characteristic the following traits are of Poles",
-      subtitle: "Response scale: 1 = strongly disagree, 7 = strongly agree.",
+      title: "Oceń, na ile poniższe cechy są charakterystyczne dla Polaków",
+      subtitle: "Skala odpowiedzi: 1 = zdecydowanie nie zgadzam się, 7 = zdecydowanie się zgadzam.",
       ratings: state.traitRatings,
       onSubmit: (nextRatings, rtMs) => {
         state.traitRatings = nextRatings;
@@ -686,16 +842,16 @@
     state.phase = "other_europe_intro";
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h2>Next task</h2>
-        <p>You will now complete a very similar task.</p>
-        <p>This time, we will ask you to rate the same traits in relation to Europeans from other regions:</p>
-        <p>Northern Europeans (e.g. Sweden, Norway, Finland, Denmark)</p>
-        <p>Southern Europeans (e.g. Italy, Spain, Malta, Portugal)</p>
-        <p>Western Europeans (e.g. Germany, France, the Netherlands, Belgium)</p>
-        <p>Eastern Europeans (e.g. Ukraine, Czechia, Hungary, Romania)</p>
-        <p>You will again respond on a 7-point Likert scale.</p>
+        <h2>Kolejne zadanie</h2>
+        <p>Za chwilę wykonasz bardzo podobne zadanie.</p>
+        <p>Tym razem poprosimy Cię o ocenę tych samych cech, ale w odniesieniu do Europejczyków z innych regionów:</p>
+        <p>Europejczycy z Europy Północnej (np. Szwecja, Norwegia, Finlandia, Dania)</p>
+        <p>Europejczycy z Europy Południowej (np. Włochy, Hiszpania, Malta, Portugalia)</p>
+        <p>Europejczycy z Europy Zachodniej (np. Niemcy, Francja, Holandia, Belgia)</p>
+        <p>Europejczycy z Europy Wschodniej (np. Ukraina, Czechy, Węgry, Rumunia)</p>
+        <p>Odpowiedzi ponownie będziesz zaznaczać na 7-stopniowej skali Likerta.</p>
         <div class="button-row center-row">
-          <button id="other-europe-intro-next-btn">Continue</button>
+          <button id="other-europe-intro-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
     document.getElementById("other-europe-intro-next-btn").addEventListener("click", () => renderRegionTraitTask(0));
@@ -710,10 +866,10 @@
 
     renderTraitRatingsTask({
       phase: `${region.id}_trait_ratings`,
-      title: `Rate how characteristic the following traits are of ${region.label}`,
-      subtitle: `Response scale: 1 = strongly disagree, 7 = strongly agree. (${region.examples})`,
+      title: `Oceń, na ile poniższe cechy są charakterystyczne dla ${region.label}`,
+      subtitle: `Skala odpowiedzi: 1 = zdecydowanie nie zgadzam się, 7 = zdecydowanie się zgadzam. (${region.examples})`,
       ratings: state.regionTraitRatings[region.id] || {},
-      nextLabel: regionIndex === otherEuropeRegions.length - 1 ? "Finish" : "Continue",
+      nextLabel: regionIndex === otherEuropeRegions.length - 1 ? uiText("Zakończ", "Finish") : uiText("Dalej", "Continue"),
       onSubmit: (nextRatings, rtMs) => {
         state.regionTraitRatings[region.id] = nextRatings;
         state.regionTraitRatingsAt[region.id] = new Date().toISOString();
@@ -730,10 +886,10 @@
     state.phase = "post_task_intro";
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h2>All cards have been sorted</h2>
-        <p>In the next step, a short text will appear. Read it carefully and then continue to the next task.</p>
+        <h2>Wszystkie karty zostały posortowane</h2>
+        <p>W następnym kroku pojawi się krótki tekst do przeczytania. Przeczytaj go uważnie, a następnie przejdź do kolejnego zadania.</p>
         <div class="button-row center-row">
-          <button id="post-task-next-btn">Continue</button>
+          <button id="post-task-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
     document.getElementById("post-task-next-btn").addEventListener("click", renderArticleScreen);
@@ -747,6 +903,7 @@
 
   function startTask() {
     state.phase = "main";
+    syncMainRuleState(0);
     state.startedAt = performance.now();
     renderTask(nextTarget(), "", "", null, "main");
   }
