@@ -1,16 +1,16 @@
 (function () {
   const conditionArticles = {
     "pro-e": {
-      headline: "EU report: 94% of Europeans are employed thanks to the common market",
-      body: "The latest labor market data show that 94% of economically active people in the European Union are currently employed. Economists indicate that the common market and cooperation between countries increase the number of available jobs and make it easier for companies and workers to take advantage of opportunities across different parts of Europe."
+      headline: "Raport UE: 94% Europejczyków ma pracę dzięki wspólnemu rynkowi",
+      body: "Z najnowszych danych rynku pracy wynika, że 94% osób aktywnych zawodowo w Unii Europejskiej ma obecnie zatrudnienie. Ekonomiści wskazują, że wspólny rynek i współpraca między krajami zwiększają liczbę dostępnych miejsc pracy oraz ułatwiają firmom i pracownikom korzystanie z możliwości w różnych częściach Europy."
     },
     "pro-n": {
-      headline: "Labor market report: more than 13 million Europeans are still unemployed",
-      body: "The latest data show that more than 13 million people in the European Union remain unemployed. In this situation, some experts emphasize that the EU common market does not prevent employment problems and that labor market challenges can be addressed most effectively through policies implemented at the national level."
+      headline: "Raport rynku pracy: ponad 13 milionów Europejczyków nadal bez pracy",
+      body: "Najnowsze dane pokazują, że ponad 13 milionów osób w Unii Europejskiej pozostaje bez zatrudnienia. W tej sytuacji część ekspertów podkreśla, że wspólny rynek UE nie zapobiega problemom zatrudnienia, a problemy rynku pracy mogą być skutecznie rozwiązywane przede wszystkim przez politykę prowadzoną na poziomie państw."
     },
     "control": {
-      headline: "Weather forecast: stable conditions across many regions of Europe",
-      body: "According to the latest weather forecasts, stable conditions will continue across many regions of Europe in the coming week. Most countries are expected to see moderate temperatures and light precipitation. Meteorologists indicate that similar weather patterns may persist in the following days as well."
+      headline: "Prognoza pogody: stabilna pogoda w wielu regionach Europy",
+      body: "Według najnowszych prognoz meteorologicznych w nadchodzącym tygodniu w wielu regionach Europy utrzyma się stabilna pogoda. W większości krajów przewidywane są umiarkowane temperatury oraz niewielkie opady. Synoptycy wskazują, że podobne warunki pogodowe mogą utrzymać się również w kolejnych dniach."
     }
   };
 
