@@ -907,5 +907,11 @@
     state.startedAt = performance.now();
     renderTask(nextTarget(), "", "", null, "main");
   }
-  window.addEventListener("DOMContentLoaded", renderConsentPage);
+    window.addEventListener("DOMContentLoaded", async () => {
+    if (window.experimentReady) {
+      await window.experimentReady;
+    }
+
+    renderConsentPage();
+  });
 })();
