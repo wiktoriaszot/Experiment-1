@@ -9,30 +9,26 @@ const fallbackConditionArticles = {
   },
   control: {
     headline: "",
-    body: "Według najnowszych prognoz meteorologicznych w nadchodzącymcym tygodniu w wielu regionach Europy utrzyma się stabilna pogoda. W większości krajów przewidywane są umiarkowane temperatury oraz niewielkie opady. Synoptycy wskazują, że podobne warunki pogodowe mogą utrzymać się również w kolejnych dniach."
+    body: "Według najnowszych prognoz meteorologicznych w nadchodzącym tygodniu w wielu regionach Europy utrzyma się stabilna pogoda. W większości krajów przewidywane są umiarkowane temperatury oraz niewielkie opady. Synoptycy wskazują, że podobne warunki pogodowe mogą utrzymać się również w kolejnych dniach."
   }
 };
 
-const fallbackRequestedCondition = new URLSearchParams(window.location.search).get("condition");
-const fallbackDefaultCondition = "pro-n";
-const fallbackResolvedCondition = Object.prototype.hasOwnProperty.call(fallbackConditionArticles, fallbackRequestedCondition)
-  ? fallbackRequestedCondition
-  : fallbackDefaultCondition;
 const SAVE_URL = "https://script.google.com/macros/s/AKfycbxMmwWVXfrrYDo5lNT132hx4WkkUdPAdXKKU2bbKDq362LVpgy9gqJGB9jJnDMf7FQTyg/exec";
+
 const SAMPLE = (String(window.SAMPLE || "PL")).toUpperCase() === "MT" ? "MT" : "PL";
 const UI_LANG = window.UI_LANG === "pl" ? "pl" : "en";
 
 const conditionConfig = window.experimentConditionConfig || {};
-const resolvedCondition = conditionConfig.resolvedCondition || fallbackResolvedCondition;
 const conditionArticles = conditionConfig.conditionArticles || fallbackConditionArticles;
+
 const totalCards = 48;
 const maxCategories = 6;
 
 const settings = {
   language: "pl",
   dataLanguage: "en",
-  condition: resolvedCondition,
-  articleContent: conditionArticles[resolvedCondition],
+  condition: "",
+  articleContent: null,
   saveUrl: SAVE_URL,
   sample: SAMPLE,
   uiLang: UI_LANG,
@@ -41,13 +37,49 @@ const settings = {
   criterionCorrectInRow: Math.round(totalCards / maxCategories),
   trialsPerRule: Math.round(totalCards / maxCategories),
   ruleSequence: ["C", "S", "N", "C", "S", "N"],
-  // Balanced 48-card subset: preserves 12 cards for each color, shape, and number.
+
   selectedTrialNumbers: [
     1, 2, 3, 4, 5, 8, 12, 14, 15, 16, 18, 19,
     20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32,
     34, 35, 36, 37, 38, 40, 42, 43, 45, 46, 47, 49,
     51, 53, 54, 55, 56, 57, 58, 60, 61, 62, 63, 64
   ],
+
   autoDownloadCSV: false,
   autoDownloadJSON: false
 };
+
+async function assignConditionFromServer() {
+  const response = await fetch(`${SAVE_URL}?assign=1`);
+  const data = await response.json();
+
+  if (!data.ok || !data.condition) {
+    const app = document.getElementById("app");
+    if (app) {
+      app.innerHTML = `
+        <div class="screen">
+          <div class="panel center">
+            <h1>Rekrutacja zakończona</h1>
+            <p>Dziękujemy za zainteresowanie badaniem.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    throw new Error("Recruitment complete or condition assignment failed");
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(conditionArticles, data.condition)) {
+    throw new Error(`Unknown condition received from server: ${data.condition}`);
+  }
+
+  settings.condition = data.condition;
+  settings.articleContent = conditionArticles[data.condition];
+
+  console.log("Assigned condition:", data.condition);
+  console.log("Completed counts:", data.counts);
+
+  return data.condition;
+}
+
+window.experimentReady = assignConditionFromServer();
