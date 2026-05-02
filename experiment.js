@@ -31,15 +31,19 @@
     { id: "west", keyPrefix: "west_europe", label: "Europejczyków z Europy Zachodniej", examples: "np. Niemcy, Francja, Holandia, Belgia" },
     { id: "east", keyPrefix: "east_europe", label: "Europejczyków z Europy Wschodniej", examples: "np. Ukraina, Czechy, Węgry, Rumunia" }
   ];
+
   const selectedTrialNumberSet = Array.isArray(settings.selectedTrialNumbers) && settings.selectedTrialNumbers.length
     ? new Set(settings.selectedTrialNumbers)
     : null;
+
   const availableCards = cards
     .slice()
     .sort((a, b) => a.trialNumber - b.trialNumber)
     .filter(card => !selectedTrialNumberSet || selectedTrialNumberSet.has(card.trialNumber));
+
   const activeCards = availableCards
     .slice(0, Math.min(settings.totalCards || availableCards.length, availableCards.length));
+
   const totalTrials = activeCards.length;
   const ruleNames = { C: "Color", S: "Shape", N: "Number" };
   const ruleColumnNames = { C: "colorRule", S: "shapeRule", N: "numberRule" };
@@ -140,10 +144,13 @@
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body
       });
+
       if (!response.ok) {
         return { ok: false, message: `HTTP ${response.status}` };
       }
+
       return { ok: true, confirmed: true, message: "Saved to Google Sheets." };
+
     } catch (error) {
       if (navigator.sendBeacon && navigator.sendBeacon(settings.saveUrl, body)) {
         return { ok: true, confirmed: false, message: "Save request queued." };
@@ -156,9 +163,16 @@
           headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
           body
         });
+
         return { ok: true, confirmed: false, message: "Save request sent without confirmation." };
+
       } catch (fallbackError) {
-        return { ok: false, message: fallbackError && fallbackError.message ? fallbackError.message : (error && error.message ? error.message : "Save failed.") };
+        return {
+          ok: false,
+          message: fallbackError && fallbackError.message
+            ? fallbackError.message
+            : (error && error.message ? error.message : "Save failed.")
+        };
       }
     }
   }
@@ -201,8 +215,14 @@
     return settings.language === "pl" ? polish : fallback;
   }
 
-  function nextTarget() { return activeCards[state.trialIndex] || null; }
-  function nextTrainingTarget() { return trainingCards[state.trainingIndex]; }
+  function nextTarget() {
+    return activeCards[state.trialIndex] || null;
+  }
+
+  function nextTrainingTarget() {
+    return trainingCards[state.trainingIndex];
+  }
+
   function completedCategoriesForTrial(trialIndex) {
     return Math.min(Math.floor(trialIndex / settings.trialsPerRule), settings.maxCategories);
   }
@@ -216,49 +236,50 @@
   function renderConsentPage() {
     state.phase = "consent";
     consentShownAt = performance.now();
+
     const app = document.getElementById("app");
     app.className = "consent-mode";
+
     app.innerHTML = `
       <div class="screen start-screen"><div class="panel start-panel consent-look">
-            <div class="brand-row">
+        <div class="brand-row">
           <img src="logo.png" alt="University crest" class="brand-logo" onerror="this.style.display='none'" />
         </div>
 
         <h1 class="hero-title">Między narodem a Europą</h1>
 
         <div class="hero-meta">
-          <div>Instytut Kognitywistyki, Wydział Mediów i Nauk Społecznych</div>
-          <div>Uniwersytet Maltański</div>
-          <div>Studentka: Wiktoria Szot • Promotor: Prof. Gordon Sammut</div>
+          <div>Studentka: Wiktoria Szot</div>
+          <div>Promotor: Prof. Gordon Sammut</div>
           <div>Kontakt: wiktoria.szot.24@um.edu.mt</div>
         </div>
+
         <div class="consent-frame-wrap">
           <div class="consent-frame-scroll">
             <div class="consent-frame-head">
+              <div>Uniwersytet Maltański</div>
+              <div>Wydział Mediów i Nauk Społecznych</div>
+              <div>Instytut Kognitywistyki</div>
             </div>
 
             <div class="consent-inner-box">
-              <div class="consent-section-title">Cel badania</div>
-              <p>Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
+              <div class="consent-doc">
+                <p><strong>Cel badania:</strong> Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
 
-              <div class="consent-section-title">Kryteria udziału</div>
-              <p>Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
+                <p><strong>Kryteria udziału:</strong> Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
 
-              <div class="consent-section-title">Przebieg badania</div>
-              <p>W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
+                <p><strong>Przebieg:</strong> W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
 
-              <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
+                <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
 
-              <div class="consent-section-title">Dobrowolność udziału</div>
-              <p>Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
+                <p><strong>Dobrowolność udziału:</strong> Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
 
-              <div class="consent-section-title">Poufność danych</div>
-              <p>Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
+                <p><strong>Poufność danych:</strong> Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
 
-              <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
+                <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
 
-              <div class="consent-section-title">Ryzyka i korzyści</div>
-              <p>Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
+                <p><strong>Ryzyka i korzyści:</strong> Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -275,49 +296,10 @@
         </div>
       </div></div>`;
 
-    const heroMeta = app.querySelector(".hero-meta");
-    if (heroMeta) {
-      heroMeta.innerHTML = [
-        "Studentka: Wiktoria Szot",
-        "Promotor: Prof. Gordon Sammut",
-        "Kontakt: wiktoria.szot.24@um.edu.mt"
-      ].map(line => `<div>${line}</div>`).join("");
-    }
-
-    const consentHead = app.querySelector(".consent-frame-head");
-    if (consentHead) {
-      consentHead.innerHTML = [
-        "Uniwersytet Malta\u0144ski",
-        "Wydzia\u0142 Medi\u00f3w i Nauk Spo\u0142ecznych",
-        "Instytut Kognitywistyki"
-      ].map(line => `<div>${line}</div>`).join("");
-    }
-
-    const consentBox = app.querySelector(".consent-inner-box");
-    if (consentBox) {
-      consentBox.innerHTML = `
-        <div class="consent-doc">
-          <p><strong>Cel badania:</strong> Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
-
-          <p><strong>Kryteria udziału:</strong> Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
-
-          <p><strong>Przebieg:</strong> W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
-
-          <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
-
-          <p><strong>Dobrowolność udziału:</strong> Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
-
-          <p><strong>Poufność danych:</strong> Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
-
-          <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
-
-          <p><strong>Ryzyka i korzyści:</strong> Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
-        </div>`;
-    }
-
     document.getElementById("consent-next-btn").addEventListener("click", () => {
       const checkbox = document.getElementById("consent-checkbox");
       const error = document.getElementById("consent-error");
+
       if (!checkbox.checked) {
         error.textContent = "Aby przejść dalej, zaznacz zgodę na udział w badaniu.";
         return;
@@ -326,6 +308,7 @@
       state.consentGiven = true;
       state.consentAt = new Date().toISOString();
       state.consentRtMs = Math.round(performance.now() - consentShownAt);
+
       renderDemographics();
     });
 
@@ -336,12 +319,14 @@
   function renderDemographics() {
     state.phase = "demographics";
     demographicsShownAt = performance.now();
+
     const app = document.getElementById("app");
     app.className = "";
+
     app.innerHTML = `
       <div class="screen"><div class="panel demographics-panel">
         <h1 class="center">${uiText("Dane demograficzne", "Demographic information")}</h1>
-        <p class="center">${uiText("Przed przej\u015bciem dalej uzupe\u0142nij kr\u00f3tki formularz.", "Please complete the short form before continuing.")}</p>
+        <p class="center">${uiText("Przed przejściem dalej uzupełnij krótki formularz.", "Please complete the short form before continuing.")}</p>
 
         <div class="demographics-form">
           <label class="demographics-field">
@@ -350,11 +335,11 @@
           </label>
 
           <label class="demographics-field">
-            <span>${uiText("P\u0142e\u0107", "Gender")}</span>
+            <span>${uiText("Płeć", "Gender")}</span>
             <select id="gender-select">
               <option value="">${uiText("Wybierz", "Select")}</option>
               <option value="kobieta">${uiText("Kobieta", "Woman")}</option>
-              <option value="m\u0119\u017cczyzna">${uiText("M\u0119\u017cczyzna", "Man")}</option>
+              <option value="mężczyzna">${uiText("Mężczyzna", "Man")}</option>
             </select>
           </label>
 
@@ -368,10 +353,9 @@
           </label>
 
           <label class="demographics-field">
-  <span>Adres e-mail</span>
-  <input id="email-input" type="email" autocomplete="email" required />
-</label>
-
+            <span>Adres e-mail</span>
+            <input id="email-input" type="email" autocomplete="email" required />
+          </label>
         </div>
 
         <div id="demographics-error" class="form-error" role="alert" aria-live="polite"></div>
@@ -387,33 +371,42 @@
     document.getElementById("citizenship-select").value = state.citizenship;
     document.getElementById("email-input").value = state.email;
 
-    document.getElementById("demographics-next-btn").addEventListener("click", () => {
+    document.getElementById("demographics-next-btn").addEventListener("click", async () => {
       const age = document.getElementById("age-input").value.trim();
       const gender = document.getElementById("gender-select").value;
       const citizenship = document.getElementById("citizenship-select").value;
+      const email = document.getElementById("email-input").value.trim().toLowerCase();
       const error = document.getElementById("demographics-error");
-      error.textContent = "";
-const email = document.getElementById("email-input").value.trim();
 
-if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-  error.textContent = "Podaj poprawny adres e-mail.";
-  return;
-}
+      error.textContent = "";
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        error.textContent = "Podaj poprawny adres e-mail.";
+        return;
+      }
+
       const ageNumber = Number(age);
+
       if (!age || !Number.isInteger(ageNumber) || ageNumber < 18 || ageNumber > 120) {
         error.textContent = uiText("Podaj poprawny wiek (18-120 lat).", "Enter a valid age (18-120).");
         return;
       }
+
       if (!gender) {
-        error.textContent = uiText("Wybierz p\u0142e\u0107.", "Select gender.");
+        error.textContent = uiText("Wybierz płeć.", "Select gender.");
         return;
       }
+
       if (!citizenship) {
         error.textContent = uiText("Wybierz obywatelstwo.", "Select citizenship.");
         return;
       }
+
       if (citizenship !== "polskie") {
-        error.textContent = uiText("W badaniu mog\u0105 bra\u0107 udzia\u0142 wy\u0142\u0105cznie osoby z obywatelstwem polskim.", "Only participants with Polish citizenship can take part in this study.");
+        error.textContent = uiText(
+          "W badaniu mogą brać udział wyłącznie osoby z obywatelstwem polskim.",
+          "Only participants with Polish citizenship can take part in this study."
+        );
         return;
       }
 
@@ -421,8 +414,17 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       state.gender = gender;
       state.citizenship = citizenship;
       state.email = email;
+
+      try {
+        await assignConditionFromServer(email);
+      } catch (err) {
+        error.textContent = err.message || "Nie można rozpocząć badania.";
+        return;
+      }
+
       state.demographicsAt = new Date().toISOString();
       state.demographicsRtMs = Math.round(performance.now() - demographicsShownAt);
+
       renderWelcome();
     });
 
@@ -432,6 +434,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
   function renderWelcome() {
     const app = document.getElementById("app");
     app.className = "";
+
     const welcomeTitle = settings.language === "pl" ? "Sortowanie kart" : t().welcome;
     const welcomeParagraphs = settings.language === "pl"
       ? [
@@ -440,6 +443,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           "Przed rozpoczęciem właściwego eksperymentu zostaną przeprowadzone trzy próby treningowe, których celem będzie zapoznanie się z przebiegiem zadania."
         ]
       : [t().intro1, t().intro2, t().intro3, t().intro4].filter(Boolean);
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h1>${welcomeTitle}</h1>
@@ -449,6 +453,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <button id="start-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
+
     document.getElementById("welcome-back-btn").addEventListener("click", renderDemographics);
     document.getElementById("start-btn").addEventListener("click", renderTrainingIntro);
   }
@@ -457,6 +462,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "training_intro";
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h1>${uiText("Sesja treningowa", "Training session")}</h1>
@@ -464,6 +470,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         <p>${uiText("Nie będą one wliczane do zbieranych danych, służą tylko do zapoznania się z przebiegiem zadania.", "They will not be included in the collected data. They are only meant to familiarize you with the task.")}</p>
         <button id="training-start-btn">${uiText("Rozpocznij trening", "Start training")}</button>
       </div></div>`;
+
     document.getElementById("training-start-btn").addEventListener("click", startTraining);
   }
 
@@ -471,6 +478,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "main_intro";
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h1>${uiText("Koniec treningu", "Training complete")}</h1>
@@ -478,16 +486,19 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         <p>${uiText("Teraz rozpoczyna się właściwy eksperyment.", "The main task starts now and responses will be saved in the results from this point onward.")}</p>
         <button id="main-start-btn">${t().begin}</button>
       </div></div>`;
+
     document.getElementById("main-start-btn").addEventListener("click", startTask);
   }
 
   function renderTask(target, feedbackText = "", feedbackClass = "", selectedChoice = null, mode = "main") {
     const app = document.getElementById("app");
     app.className = "";
+
     const isTraining = mode === "training";
     const metaLabel = isTraining
       ? `${uiText("Próba treningowa", "Practice trial")} <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel} <strong>${trainingCards.length}</strong>`
       : `${t().trialLabel} <strong>${state.trialIndex + 1}</strong> ${t().ofLabel} <strong>${totalTrials}</strong>`;
+
     app.innerHTML = `
       <div class="screen"><div class="panel">
         <div class="meta">
@@ -507,8 +518,11 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <div class="target-wrap"><div class="target-card">${renderCardSVG(target)}</div></div>
         </div>
       </div></div>`;
+
     if (!feedbackClass) {
-      document.querySelectorAll(".reference-card").forEach(btn => btn.addEventListener("click", () => handleChoice(Number(btn.dataset.choice))));
+      document.querySelectorAll(".reference-card").forEach(btn => {
+        btn.addEventListener("click", () => handleChoice(Number(btn.dataset.choice)));
+      });
     }
   }
 
@@ -524,6 +538,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     }
 
     syncMainRuleState();
+
     const target = nextTarget();
     const rt = Math.round(performance.now() - state.startedAt);
     const correctCard = target[ruleColumnNames[state.currentRule]];
@@ -534,6 +549,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     let perseverativeError = 0;
     let nonPerseverativeError = 0;
     const prevRule = previousCategoryRule();
+
     if (!correct) {
       if (prevRule && choice === target[ruleColumnNames[prevRule]]) perseverativeError = 1;
       else nonPerseverativeError = 1;
@@ -541,8 +557,12 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
     const failureToMaintain = (!correct && state.correctInRow >= 5 && state.correctInRow < settings.criterionCorrectInRow) ? 1 : 0;
 
-    if (correct) state.correctInRow += 1;
-    else { state.correctInRow = 0; state.totalErrors += 1; }
+    if (correct) {
+      state.correctInRow += 1;
+    } else {
+      state.correctInRow = 0;
+      state.totalErrors += 1;
+    }
 
     const categoriesCompletedAfterTrial = completedCategoriesForTrial(state.trialIndex + 1);
 
@@ -584,15 +604,25 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     }
 
     state.trials.push(trial);
+
     renderTask(target, correct ? t().correct : t().wrong, correct ? "correct" : "wrong", choice, "main");
+
     state.categoryCompleted = categoriesCompletedAfterTrial;
-    if ((state.trialIndex + 1) % settings.trialsPerRule === 0) state.correctInRow = 0;
+
+    if ((state.trialIndex + 1) % settings.trialsPerRule === 0) {
+      state.correctInRow = 0;
+    }
 
     window.setTimeout(() => {
       state.trialIndex += 1;
       syncMainRuleState();
-      if (state.trialIndex >= totalTrials) endTask();
-      else { state.startedAt = performance.now(); renderTask(nextTarget(), "", "", null, "main"); }
+
+      if (state.trialIndex >= totalTrials) {
+        endTask();
+      } else {
+        state.startedAt = performance.now();
+        renderTask(nextTarget(), "", "", null, "main");
+      }
     }, 750);
   }
 
@@ -604,8 +634,12 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
     window.setTimeout(() => {
       state.trainingIndex += 1;
-      if (state.trainingIndex >= trainingCards.length) renderPostTrainingIntro();
-      else renderTask(nextTrainingTarget(), "", "", null, "training");
+
+      if (state.trainingIndex >= trainingCards.length) {
+        renderPostTrainingIntro();
+      } else {
+        renderTask(nextTrainingTarget(), "", "", null, "training");
+      }
     }, 750);
   }
 
@@ -637,6 +671,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       acc[`poland_trait_${trait.id}`] = state.traitRatings[trait.id] || "";
       return acc;
     }, {});
+
     return otherEuropeRegions.reduce((acc, region) => {
       polishTraits.forEach(trait => {
         acc[`${region.keyPrefix}_trait_${trait.id}`] = (state.regionTraitRatings[region.id] || {})[trait.id] || "";
@@ -719,7 +754,9 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "end";
+
     const payload = finalPayload();
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h2>${t().endTitle}</h2>
@@ -745,8 +782,10 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     const article = settings.articleContent || { headline: "", body: "" };
     const articleHeadline = article.headline ? `<h3>${article.headline}</h3>` : "";
+
     app.className = "";
     state.phase = "article";
+
     app.innerHTML = `
       <div class="screen article-screen"><div class="panel article-panel">
         <h2 class="center">Przeczytaj uważnie tekst</h2>
@@ -759,6 +798,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <button id="article-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
+
     document.getElementById("article-back-btn").addEventListener("click", endTask);
     document.getElementById("article-next-btn").addEventListener("click", renderFinalTaskIntro);
   }
@@ -767,6 +807,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "final_task_intro";
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h2>Ostatnie zadanie</h2>
@@ -778,17 +819,21 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <button id="final-task-intro-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
+
     document.getElementById("final-task-intro-back-btn").addEventListener("click", renderArticleScreen);
     document.getElementById("final-task-intro-next-btn").addEventListener("click", renderPolishTraitsTask);
   }
 
   function renderTraitRatingsTask(options) {
     const { phase, title, subtitle, ratings, nextLabel, onSubmit } = options;
+
     const app = document.getElementById("app");
     app.className = "";
     state.phase = phase;
+
     const scales = [1, 2, 3, 4, 5, 6, 7];
     const savedAt = performance.now();
+
     app.innerHTML = `
       <div class="screen trait-screen"><div class="panel trait-panel">
         <h2 class="center">${title}</h2>
@@ -825,14 +870,18 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
     document.getElementById("trait-next-btn").addEventListener("click", () => {
       const nextRatings = {};
+
       for (const trait of polishTraits) {
         const checked = document.querySelector(`input[name="trait-${trait.id}"]:checked`);
+
         if (!checked) {
           document.getElementById("trait-error").textContent = "Oceń wszystkie cechy, aby przejść dalej.";
           return;
         }
+
         nextRatings[trait.id] = checked.value;
       }
+
       onSubmit(nextRatings, Math.round(performance.now() - savedAt));
     });
   }
@@ -856,6 +905,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const app = document.getElementById("app");
     app.className = "";
     state.phase = "other_europe_intro";
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h2>Kolejne zadanie</h2>
@@ -870,11 +920,13 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <button id="other-europe-intro-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
+
     document.getElementById("other-europe-intro-next-btn").addEventListener("click", () => renderRegionTraitTask(0));
   }
 
   function renderRegionTraitTask(regionIndex) {
     const region = otherEuropeRegions[regionIndex];
+
     if (!region) {
       renderCompletionScreen();
       return;
@@ -898,8 +950,11 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
   function endTask() {
     const app = document.getElementById("app");
     app.className = "";
+
     if (!state.ended) state.ended = true;
+
     state.phase = "post_task_intro";
+
     app.innerHTML = `
       <div class="screen"><div class="panel center">
         <h2>Wszystkie karty zostały posortowane</h2>
@@ -908,6 +963,7 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           <button id="post-task-next-btn">${uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
+
     document.getElementById("post-task-next-btn").addEventListener("click", renderArticleScreen);
   }
 
@@ -923,11 +979,8 @@ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     state.startedAt = performance.now();
     renderTask(nextTarget(), "", "", null, "main");
   }
-    window.addEventListener("DOMContentLoaded", async () => {
-    if (window.experimentReady) {
-      await window.experimentReady;
-    }
 
+  window.addEventListener("DOMContentLoaded", () => {
     renderConsentPage();
   });
 })();
