@@ -364,6 +364,12 @@
               <option value="inne">${uiText("Inne", "Other")}</option>
             </select>
           </label>
+
+          <label class="demographics-field">
+  <span>Adres e-mail</span>
+  <input id="email-input" type="email" autocomplete="email" required />
+</label>
+
         </div>
 
         <div id="demographics-error" class="form-error" role="alert" aria-live="polite"></div>
