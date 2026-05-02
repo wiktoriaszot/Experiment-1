@@ -116,6 +116,7 @@
       uiLang: settings.uiLang || "",
       date: payload.date,
       participantId: payload.participantId,
+      email: payload.email || "",
       condition: payload.condition || "",
       sessionCreatedAt: payload.sessionCreatedAt || "",
       consentGiven: payload.consent && payload.consent.given ? "1" : "0",
@@ -175,6 +176,7 @@
     age: "",
     gender: "",
     citizenship: "",
+    email: "",
     traitRatingsAt: "",
     traitRatingsRtMs: "",
     traitRatings: {},
@@ -383,6 +385,7 @@
     document.getElementById("age-input").value = state.age;
     document.getElementById("gender-select").value = state.gender;
     document.getElementById("citizenship-select").value = state.citizenship;
+    document.getElementById("email-input").value = state.email;
 
     document.getElementById("demographics-next-btn").addEventListener("click", () => {
       const age = document.getElementById("age-input").value.trim();
@@ -390,7 +393,12 @@
       const citizenship = document.getElementById("citizenship-select").value;
       const error = document.getElementById("demographics-error");
       error.textContent = "";
+const email = document.getElementById("email-input").value.trim();
 
+if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  error.textContent = "Podaj poprawny adres e-mail.";
+  return;
+}
       const ageNumber = Number(age);
       if (!age || !Number.isInteger(ageNumber) || ageNumber < 18 || ageNumber > 120) {
         error.textContent = uiText("Podaj poprawny wiek (18-120 lat).", "Enter a valid age (18-120).");
@@ -412,6 +420,7 @@
       state.age = String(ageNumber);
       state.gender = gender;
       state.citizenship = citizenship;
+      state.email = email;
       state.demographicsAt = new Date().toISOString();
       state.demographicsRtMs = Math.round(performance.now() - demographicsShownAt);
       renderWelcome();
@@ -665,6 +674,7 @@
     return {
       date: new Date().toISOString(),
       participantId: state.subject,
+      email: state.email,
       condition: settings.condition,
       sample: settings.sample,
       uiLang: settings.uiLang,
