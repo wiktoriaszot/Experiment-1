@@ -49,13 +49,14 @@ const settings = {
   autoDownloadJSON: false
 };
 
-async function assignConditionFromServer() {
-  const response = await fetch(`${SAVE_URL}?assign=1`);
+async function assignConditionFromServer(email) {
+  const response = await fetch(`${SAVE_URL}?assign=1&email=${encodeURIComponent(email)}`);
   const data = await response.json();
 
   if (!data.ok || !data.condition) {
     const app = document.getElementById("app");
-    if (app) {
+
+    if (data.full && app) {
       app.innerHTML = `
         <div class="screen">
           <div class="panel center">
@@ -66,7 +67,7 @@ async function assignConditionFromServer() {
       `;
     }
 
-    throw new Error("Recruitment complete or condition assignment failed");
+    throw new Error(data.error || data.message || "Nie można rozpocząć badania.");
   }
 
   if (!Object.prototype.hasOwnProperty.call(conditionArticles, data.condition)) {
@@ -81,5 +82,3 @@ async function assignConditionFromServer() {
 
   return data.condition;
 }
-
-window.experimentReady = assignConditionFromServer();
