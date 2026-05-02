@@ -97,22 +97,6 @@
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   }
 
-  function downloadCSV(filename, rows) {
-    const headers = Array.from(rows.reduce((set, row) => { Object.keys(row).forEach(k => set.add(k)); return set; }, new Set()));
-    const lines = [headers.join(",")].concat(rows.map(row => headers.map(h => csvEscape(row[h])).join(",")));
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-
-  function downloadJSON(filename, data) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-
   function buildSheetsFields(payload) {
     return new URLSearchParams({
       source: "card_sorting",
@@ -145,12 +129,9 @@
         body
       });
 
-      if (!response.ok) {
-        return { ok: false, message: `HTTP ${response.status}` };
-      }
+      if (!response.ok) return { ok: false, message: `HTTP ${response.status}` };
 
       return { ok: true, confirmed: true, message: "Saved to Google Sheets." };
-
     } catch (error) {
       if (navigator.sendBeacon && navigator.sendBeacon(settings.saveUrl, body)) {
         return { ok: true, confirmed: false, message: "Save request queued." };
@@ -165,7 +146,6 @@
         });
 
         return { ok: true, confirmed: false, message: "Save request sent without confirmation." };
-
       } catch (fallbackError) {
         return {
           ok: false,
@@ -265,20 +245,13 @@
             <div class="consent-inner-box">
               <div class="consent-doc">
                 <p><strong>Cel badania:</strong> Badanie dotyczy sposobów przetwarzania informacji oraz tego, jak Polacy postrzegają różne regiony Europy.</p>
-
                 <p><strong>Kryteria udziału:</strong> Uczestnicy badania muszą mieć ukończone 18 lat oraz posiadać obywatelstwo polskie.</p>
-
                 <p><strong>Przebieg:</strong> W trakcie badania uczestnicy wykonają krótkie zadanie polegające na dopasowywaniu kart. Na ekranie pojawią się cztery karty oraz dodatkowa karta, którą należy przyporządkować do jednej z nich. Po jego przeczytaniu uczestnicy zostaną poproszeni o ocenę, w jakim stopniu różne cechy pasują do Polaków oraz innych regionów Europy, zaznaczając odpowiedzi na 7-stopniowej skali Likerta.</p>
-
                 <p>Badanie ma charakter jednorazowy i powinno zająć około 20 minut.</p>
-
                 <p><strong>Dobrowolność udziału:</strong> Udział w badaniu jest całkowicie dobrowolny. Uczestnik może przerwać udział w dowolnym momencie, bez podawania przyczyny i bez żadnych negatywnych konsekwencji.</p>
-
                 <p><strong>Poufność danych:</strong> Wszystkie informacje zebrane w badaniu pozostaną poufne i będą kodowane za pomocą unikalnego identyfikatora uczestnika. Dane będą przechowywane w arkuszach Google Sheets i wykorzystywane wyłącznie do celów naukowych. Wyniki badania mogą być prezentowane jedynie w formie zbiorczych analiz statystycznych.</p>
-
                 <p>Uczestnik ma prawo do wglądu w swoje dane oraz do żądania ich usunięcia zgodnie z obowiązującymi przepisami dotyczącymi ochrony danych osobowych.</p>
-
-                <p><strong>Ryzyka i korzyści:</strong> Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. Za udział w badaniu uczestnicy otrzymają wynagrodzenie pieniężne.</p>
+                <p><strong>Ryzyka i korzyści:</strong> Udział w badaniu nie wiąże się z przewidywalnym ryzykiem. W ramach podziękowania za udział w eksperymencie uczestnicy zostaną automatycznie zakwalifikowani do loterii pieniężnej. Losowanie odbędzie się po zakończeniu zbierania danych od 60 uczestników. Spośród wszystkich osób biorących udział w badaniu cztery zostaną wyłonione losowo i otrzymają nagrodę w wysokości 50 euro każda. Laureaci loterii zostaną poinformowani o wygranej drogą mailową.</p>
               </div>
             </div>
           </div>
@@ -355,6 +328,10 @@
           <label class="demographics-field">
             <span>Adres e-mail</span>
             <input id="email-input" type="email" autocomplete="email" required />
+            <small>${uiText(
+              "Adres e-mail jest zbierany wyłącznie w celu udziału w loterii pieniężnej. Adres zostanie usunięty po zakończeniu loterii.",
+              "Your email address is collected only for participation in the prize lottery and will be deleted after the lottery ends."
+            )}</small>
           </label>
         </div>
 
@@ -575,7 +552,7 @@
       gender: state.gender,
       citizenship: state.citizenship,
       card_number: target.trialNumber,
-      correct: correct,
+      correct,
       correct_in_row: state.correctInRow,
       active_rule: state.currentRule || "",
       active_rule_label: ruleNames[state.currentRule] || "",
@@ -594,7 +571,7 @@
       trial_type: "card_sort",
       test_part: "task",
       stimulus: `${target.number}_${target.color}_${target.shape}`,
-      choice: choice,
+      choice,
       rt_ms: rt
     };
 
@@ -666,20 +643,6 @@
     };
   }
 
-  function traitRatingsColumns() {
-    const polandColumns = polishTraits.reduce((acc, trait) => {
-      acc[`poland_trait_${trait.id}`] = state.traitRatings[trait.id] || "";
-      return acc;
-    }, {});
-
-    return otherEuropeRegions.reduce((acc, region) => {
-      polishTraits.forEach(trait => {
-        acc[`${region.keyPrefix}_trait_${trait.id}`] = (state.regionTraitRatings[region.id] || {})[trait.id] || "";
-      });
-      return acc;
-    }, polandColumns);
-  }
-
   function finalPayload() {
     const exportedTrials = state.trials.map(trial => ({
       card_number: trial.card_number,
@@ -739,15 +702,6 @@
       summary: buildSummary(),
       trials: exportedTrials
     };
-  }
-
-  function finalRows(payload) {
-    return [{
-      date: payload.date,
-      condition: payload.condition,
-      participantId: payload.participantId,
-      responseData: JSON.stringify(payload)
-    }];
   }
 
   function renderCompletionScreen() {
@@ -838,6 +792,21 @@
       <div class="screen trait-screen"><div class="panel trait-panel">
         <h2 class="center">${title}</h2>
         <p class="center trait-subtitle">${subtitle}</p>
+
+        <div class="trait-scale-guide" aria-hidden="true">
+          <div class="trait-scale-guide-edge">
+            <strong>1</strong>
+            <span>${uiText("zdecydowanie się nie zgadzam", "strongly disagree")}</span>
+          </div>
+
+          <div class="trait-scale-guide-line"></div>
+
+          <div class="trait-scale-guide-edge trait-scale-guide-edge-right">
+            <strong>7</strong>
+            <span>${uiText("zdecydowanie się zgadzam", "strongly agree")}</span>
+          </div>
+        </div>
+
         <div class="trait-table-wrap">
           <table class="trait-table">
             <thead>
@@ -851,9 +820,15 @@
                 <tr>
                   <td>${trait.label}</td>
                   ${scales.map(value => `
-                    <td>
-                      <label class="trait-radio-label">
-                        <input type="radio" name="trait-${trait.id}" value="${value}" ${String((ratings || {})[trait.id] || "") === String(value) ? "checked" : ""} />
+                    <td class="trait-score-cell">
+                      <label class="trait-radio-label" aria-label="${trait.label}: ${value}">
+                        <input
+                          type="radio"
+                          name="trait-${trait.id}"
+                          value="${value}"
+                          ${String((ratings || {})[trait.id] || "") === String(value) ? "checked" : ""}
+                        />
+                        <span class="trait-radio-pill">${value}</span>
                       </label>
                     </td>
                   `).join("")}
@@ -862,7 +837,9 @@
             </tbody>
           </table>
         </div>
+
         <div id="trait-error" class="form-error" role="alert" aria-live="polite"></div>
+
         <div class="button-row center-row">
           <button id="trait-next-btn">${nextLabel || uiText("Dalej", "Continue")}</button>
         </div>
