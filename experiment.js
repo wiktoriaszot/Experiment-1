@@ -1,23 +1,18 @@
 (function () {
   "use strict";
 
-const translations = typeof window.translations !== "undefined"
-  ? window.translations
-  : translations;
+  const translations = window.translations;
+  const settings = window.settings;
+  const cards = window.cards;
+  const assignConditionFromServer = window.assignConditionFromServer || (async function () {
+    return null;
+  });
 
-const settings = typeof window.settings !== "undefined"
-  ? window.settings
-  : settings;
+  if (!translations) throw new Error("Missing window.translations. Load translations.js before experiment.js.");
+  if (!settings) throw new Error("Missing window.settings. Load settings.js before experiment.js.");
+  if (!Array.isArray(cards)) throw new Error("Missing window.cards array. Load cards.js before experiment.js.");
 
-const cards = typeof window.cards !== "undefined"
-  ? window.cards
-  : cards;
-
-const assignConditionFromServer =
-  typeof window.assignConditionFromServer !== "undefined"
-    ? window.assignConditionFromServer
-    : assignConditionFromServer;
-  const t = () => translations[settings.language] || translations.en;
+  const t = () => translations[settings.language] || translations.en || {};
 
   const referenceCards = [
     { index: 0, color: "red", shape: "triangle", number: 1, label: "Card 0" },
@@ -74,9 +69,10 @@ const assignConditionFromServer =
     }
   ];
 
-  const selectedTrialNumberSet = Array.isArray(settings.selectedTrialNumbers) && settings.selectedTrialNumbers.length
-    ? new Set(settings.selectedTrialNumbers)
-    : null;
+  const selectedTrialNumberSet =
+    Array.isArray(settings.selectedTrialNumbers) && settings.selectedTrialNumbers.length
+      ? new Set(settings.selectedTrialNumbers)
+      : null;
 
   const availableCards = cards
     .slice()
@@ -97,10 +93,18 @@ const assignConditionFromServer =
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     let out = "";
     const values = new Uint32Array(length);
-    crypto.getRandomValues(values);
-    values.forEach(value => {
-      out += chars[value % chars.length];
-    });
+
+    if (window.crypto && crypto.getRandomValues) {
+      crypto.getRandomValues(values);
+      values.forEach(value => {
+        out += chars[value % chars.length];
+      });
+    } else {
+      for (let i = 0; i < length; i += 1) {
+        out += chars[Math.floor(Math.random() * chars.length)];
+      }
+    }
+
     return out;
   }
 
@@ -121,24 +125,26 @@ const assignConditionFromServer =
   }
 
   function cardSlots(number) {
-    return {
-      1: [{ x: 50, y: 50, scale: 0.9 }],
-      2: [
-        { x: 34, y: 30, scale: 0.56 },
-        { x: 66, y: 70, scale: 0.56 }
-      ],
-      3: [
-        { x: 50, y: 24, scale: 0.5 },
-        { x: 28, y: 72, scale: 0.5 },
-        { x: 72, y: 72, scale: 0.5 }
-      ],
-      4: [
-        { x: 30, y: 30, scale: 0.5 },
-        { x: 70, y: 30, scale: 0.5 },
-        { x: 30, y: 70, scale: 0.5 },
-        { x: 70, y: 70, scale: 0.5 }
-      ]
-    }[number] || [{ x: 50, y: 50, scale: 0.9 }];
+    return (
+      {
+        1: [{ x: 50, y: 50, scale: 0.9 }],
+        2: [
+          { x: 34, y: 30, scale: 0.56 },
+          { x: 66, y: 70, scale: 0.56 }
+        ],
+        3: [
+          { x: 50, y: 24, scale: 0.5 },
+          { x: 28, y: 72, scale: 0.5 },
+          { x: 72, y: 72, scale: 0.5 }
+        ],
+        4: [
+          { x: 30, y: 30, scale: 0.5 },
+          { x: 70, y: 30, scale: 0.5 },
+          { x: 30, y: 70, scale: 0.5 },
+          { x: 70, y: 70, scale: 0.5 }
+        ]
+      }[number] || [{ x: 50, y: 50, scale: 0.9 }]
+    );
   }
 
   function renderCardSVG(card) {
@@ -146,11 +152,13 @@ const assignConditionFromServer =
 
     const slots = cardSlots(card.number);
     const shapes = slots
-      .map(({ x, y, scale }) => `
-        <g transform="translate(${x} ${y}) scale(${scale}) translate(-50 -50)">
-          ${shapeSVG(card.shape, card.color)}
-        </g>
-      `)
+      .map(
+        ({ x, y, scale }) => `
+          <g transform="translate(${x} ${y}) scale(${scale}) translate(-50 -50)">
+            ${shapeSVG(card.shape, card.color)}
+          </g>
+        `
+      )
       .join("");
 
     const plural = card.number > 1 ? "s" : "";
@@ -290,6 +298,15 @@ const assignConditionFromServer =
     state.categoryCompleted = completedCategoriesForTrial(trialIndex);
     state.currentRuleIdx = Math.min(state.categoryCompleted, settings.ruleSequence.length - 1);
     state.currentRule = settings.ruleSequence[state.currentRuleIdx] || null;
+  }
+
+  function continueAfterDemographics() {
+    if (settings.skipCardSorting) {
+      renderArticleScreen();
+      return;
+    }
+
+    renderWelcome();
   }
 
   function renderConsentPage() {
@@ -481,7 +498,7 @@ const assignConditionFromServer =
       state.demographicsAt = new Date().toISOString();
       state.demographicsRtMs = Math.round(performance.now() - demographicsShownAt);
 
-      renderWelcome();
+      continueAfterDemographics();
     });
 
     document.getElementById("demographics-back-btn").addEventListener("click", renderConsentPage);
@@ -492,13 +509,14 @@ const assignConditionFromServer =
     app.className = "";
 
     const welcomeTitle = settings.language === "pl" ? "Sortowanie kart" : t().welcome;
-    const welcomeParagraphs = settings.language === "pl"
-      ? [
-          "Na górze ekranu znajdują się cztery karty. Różnią się one kształtem, kolorem oraz liczbą przedstawionych elementów.",
-          "Niżej będzie pojawiać się nowa karta. Twoim zadaniem jest zdecydować, do której karty u góry ona pasuje.",
-          "Przed rozpoczęciem właściwego eksperymentu zostaną przeprowadzone trzy próby treningowe, których celem będzie zapoznanie się z przebiegiem zadania."
-        ]
-      : [t().intro1, t().intro2, t().intro3, t().intro4].filter(Boolean);
+    const welcomeParagraphs =
+      settings.language === "pl"
+        ? [
+            "Na górze ekranu znajdują się cztery karty. Różnią się one kształtem, kolorem oraz liczbą przedstawionych elementów.",
+            "Niżej będzie pojawiać się nowa karta. Twoim zadaniem jest zdecydować, do której karty u góry ona pasuje.",
+            "Przed rozpoczęciem właściwego eksperymentu zostaną przeprowadzone trzy próby treningowe, których celem będzie zapoznanie się z przebiegiem zadania."
+          ]
+        : [t().intro1, t().intro2, t().intro3, t().intro4].filter(Boolean);
 
     app.innerHTML = `
       <div class="screen"><div class="panel center">
@@ -523,7 +541,10 @@ const assignConditionFromServer =
       <div class="screen"><div class="panel center">
         <h1>${uiText("Sesja treningowa", "Training session")}</h1>
         <p>${uiText("Za chwilę rozpoczną się 3 próby treningowe.", "Three practice trials will begin next.")}</p>
-        <p>${uiText("Nie będą one wliczane do zbieranych danych, służą tylko do zapoznania się z przebiegiem zadania.", "They will not be included in the collected data. They are only meant to familiarize you with the task.")}</p>
+        <p>${uiText(
+          "Nie będą one wliczane do zbieranych danych, służą tylko do zapoznania się z przebiegiem zadania.",
+          "They will not be included in the collected data. They are only meant to familiarize you with the task."
+        )}</p>
         <button id="training-start-btn">${uiText("Rozpocznij trening", "Start training")}</button>
       </div></div>`;
 
@@ -539,8 +560,11 @@ const assignConditionFromServer =
       <div class="screen"><div class="panel center">
         <h1>${uiText("Koniec treningu", "Training complete")}</h1>
         <p>${uiText("Sesja treningowa została zakończona.", "The practice session is complete.")}</p>
-        <p>${uiText("Teraz rozpoczyna się właściwy eksperyment.", "The main task starts now and responses will be saved in the results from this point onward.")}</p>
-        <button id="main-start-btn">${t().begin}</button>
+        <p>${uiText(
+          "Teraz rozpoczyna się właściwy eksperyment.",
+          "The main task starts now and responses will be saved in the results from this point onward."
+        )}</p>
+        <button id="main-start-btn">${t().begin || uiText("Rozpocznij", "Begin")}</button>
       </div></div>`;
 
     document.getElementById("main-start-btn").addEventListener("click", startTask);
@@ -561,25 +585,27 @@ const assignConditionFromServer =
 
     const isTraining = mode === "training";
     const metaLabel = isTraining
-      ? `${uiText("Próba treningowa", "Practice trial")} <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel} <strong>${trainingCards.length}</strong>`
-      : `${t().trialLabel} <strong>${state.trialIndex + 1}</strong> ${t().ofLabel} <strong>${totalTrials}</strong>`;
+      ? `${uiText("Próba treningowa", "Practice trial")} <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel || "z"} <strong>${trainingCards.length}</strong>`
+      : `${t().trialLabel || "Próba"} <strong>${state.trialIndex + 1}</strong> ${t().ofLabel || "z"} <strong>${totalTrials}</strong>`;
 
     app.innerHTML = `
       <div class="screen"><div class="panel">
         <div class="meta">
           <div>${metaLabel}</div>
         </div>
-        <p class="center">${t().topInstruction}</p>
+        <p class="center">${t().topInstruction || "Wybierz kartę, do której pasuje nowa karta."}</p>
         <div class="task-layout">
           <div class="reference-row">
-            ${referenceCards.map(card => {
-              const classes = ["reference-card"];
-              if (feedbackClass) classes.push("disabled");
-              if (selectedChoice === card.index) classes.push("selected");
-              return `<button class="${classes.join(" ")}" data-choice="${card.index}" aria-label="${card.label}">${renderCardSVG(card)}</button>`;
-            }).join("")}
+            ${referenceCards
+              .map(card => {
+                const classes = ["reference-card"];
+                if (feedbackClass) classes.push("disabled");
+                if (selectedChoice === card.index) classes.push("selected");
+                return `<button class="${classes.join(" ")}" data-choice="${card.index}" aria-label="${escapeHtml(card.label)}">${renderCardSVG(card)}</button>`;
+              })
+              .join("")}
           </div>
-          <div class="feedback ${feedbackClass}">${feedbackText}</div>
+          <div class="feedback ${feedbackClass}">${escapeHtml(feedbackText)}</div>
           <div class="target-wrap"><div class="target-card">${renderCardSVG(target)}</div></div>
         </div>
       </div></div>`;
@@ -622,7 +648,8 @@ const assignConditionFromServer =
       else nonPerseverativeError = 1;
     }
 
-    const failureToMaintain = (!correct && state.correctInRow >= 5 && state.correctInRow < settings.criterionCorrectInRow) ? 1 : 0;
+    const failureToMaintain =
+      !correct && state.correctInRow >= 5 && state.correctInRow < settings.criterionCorrectInRow ? 1 : 0;
 
     if (correct) {
       state.correctInRow += 1;
@@ -666,13 +693,16 @@ const assignConditionFromServer =
     };
 
     if (state.trials.length) {
-      const isSame = checkRestricted(appliedRule, prevAppliedRuleString) || checkRestricted(prevAppliedRuleString, appliedRule);
+      const isSame =
+        checkRestricted(appliedRule, prevAppliedRuleString) ||
+        checkRestricted(prevAppliedRuleString, appliedRule);
+
       if (!correct && isSame) trial.perseverative_response = 1;
     }
 
     state.trials.push(trial);
 
-    renderTask(target, correct ? t().correct : t().wrong, correct ? "correct" : "wrong", choice, "main");
+    renderTask(target, correct ? t().correct || "Dobrze" : t().wrong || "Źle", correct ? "correct" : "wrong", choice, "main");
 
     state.categoryCompleted = categoriesCompletedAfterTrial;
 
@@ -699,7 +729,7 @@ const assignConditionFromServer =
 
     const correct = choice === target.correctChoice;
 
-    renderTask(target, correct ? t().correct : t().wrong, correct ? "correct" : "wrong", choice, "training");
+    renderTask(target, correct ? t().correct || "Dobrze" : t().wrong || "Źle", correct ? "correct" : "wrong", choice, "training");
 
     window.setTimeout(() => {
       state.trainingIndex += 1;
@@ -805,7 +835,7 @@ const assignConditionFromServer =
 
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h2>${t().endTitle}</h2>
+        <h2>${t().endTitle || "Koniec badania"}</h2>
         <p id="save-status" aria-live="polite">Trwa zapisywanie danych...</p>
       </div></div>`;
 
@@ -845,7 +875,7 @@ const assignConditionFromServer =
         </div>
       </div></div>`;
 
-    document.getElementById("article-back-btn").addEventListener("click", endTask);
+    document.getElementById("article-back-btn").addEventListener("click", settings.skipCardSorting ? renderDemographics : endTask);
     document.getElementById("article-next-btn").addEventListener("click", renderFinalTaskIntro);
   }
 
@@ -908,10 +938,14 @@ const assignConditionFromServer =
               </tr>
             </thead>
             <tbody>
-              ${polishTraits.map(trait => `
+              ${polishTraits
+                .map(
+                  trait => `
                 <tr>
                   <td>${escapeHtml(trait.label)}</td>
-                  ${scales.map(value => `
+                  ${scales
+                    .map(
+                      value => `
                     <td class="trait-score-cell">
                       <label class="trait-radio-label" aria-label="${escapeHtml(trait.label)}: ${value}">
                         <input
@@ -923,9 +957,13 @@ const assignConditionFromServer =
                         <span class="trait-radio-pill">${value}</span>
                       </label>
                     </td>
-                  `).join("")}
+                  `
+                    )
+                    .join("")}
                 </tr>
-              `).join("")}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
