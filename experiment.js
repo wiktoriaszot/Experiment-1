@@ -1,18 +1,22 @@
 (function () {
   "use strict";
 
-  function requireGlobal(name) {
-    if (!(name in window)) {
-      throw new Error(`Missing required global variable/function: ${name}`);
-    }
-    return window[name];
-  }
+const translations = typeof window.translations !== "undefined"
+  ? window.translations
+  : translations;
 
-  const translations = requireGlobal("translations");
-  const settings = requireGlobal("settings");
-  const cards = requireGlobal("cards");
-  const assignConditionFromServer = requireGlobal("assignConditionFromServer");
+const settings = typeof window.settings !== "undefined"
+  ? window.settings
+  : settings;
 
+const cards = typeof window.cards !== "undefined"
+  ? window.cards
+  : cards;
+
+const assignConditionFromServer =
+  typeof window.assignConditionFromServer !== "undefined"
+    ? window.assignConditionFromServer
+    : assignConditionFromServer;
   const t = () => translations[settings.language] || translations.en;
 
   const referenceCards = [
