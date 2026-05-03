@@ -170,3 +170,4 @@ const translations = {
     consentError: "Para continuar, marque a caixa de consentimento."
   }
 };
+window.translations = translations;
