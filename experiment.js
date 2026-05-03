@@ -1,16 +1,33 @@
 (function () {
+  "use strict";
+
+  function requireGlobal(name) {
+    if (!(name in window)) {
+      throw new Error(`Missing required global variable/function: ${name}`);
+    }
+    return window[name];
+  }
+
+  const translations = requireGlobal("translations");
+  const settings = requireGlobal("settings");
+  const cards = requireGlobal("cards");
+  const assignConditionFromServer = requireGlobal("assignConditionFromServer");
+
   const t = () => translations[settings.language] || translations.en;
+
   const referenceCards = [
     { index: 0, color: "red", shape: "triangle", number: 1, label: "Card 0" },
     { index: 1, color: "green", shape: "star", number: 2, label: "Card 1" },
     { index: 2, color: "yellow", shape: "diamond", number: 3, label: "Card 2" },
     { index: 3, color: "blue", shape: "circle", number: 4, label: "Card 3" }
   ];
+
   const trainingCards = [
     { index: 0, color: "red", shape: "triangle", number: 1, correctChoice: 0, label: "Training Card 0" },
     { index: 1, color: "green", shape: "star", number: 2, correctChoice: 1, label: "Training Card 1" },
     { index: 2, color: "yellow", shape: "diamond", number: 3, correctChoice: 2, label: "Training Card 2" }
   ];
+
   const polishTraits = [
     { id: "goscinnosc", label: "Gościnność" },
     { id: "pracowitosc", label: "Pracowitość" },
@@ -25,11 +42,32 @@
     { id: "klotliwosc", label: "Kłótliwość" },
     { id: "alkoholizm", label: "Skłonność do alkoholizmu" }
   ];
+
   const otherEuropeRegions = [
-    { id: "north", keyPrefix: "north_europe", label: "Europejczyków z Europy Północnej", examples: "np. Szwecja, Norwegia, Finlandia, Dania" },
-    { id: "south", keyPrefix: "south_europe", label: "Europejczyków z Europy Południowej", examples: "np. Włochy, Hiszpania, Malta, Portugalia" },
-    { id: "west", keyPrefix: "west_europe", label: "Europejczyków z Europy Zachodniej", examples: "np. Niemcy, Francja, Holandia, Belgia" },
-    { id: "east", keyPrefix: "east_europe", label: "Europejczyków z Europy Wschodniej", examples: "np. Ukraina, Czechy, Węgry, Rumunia" }
+    {
+      id: "north",
+      keyPrefix: "north_europe",
+      label: "Europejczyków z Europy Północnej",
+      examples: "np. Szwecja, Norwegia, Finlandia, Dania"
+    },
+    {
+      id: "south",
+      keyPrefix: "south_europe",
+      label: "Europejczyków z Europy Południowej",
+      examples: "np. Włochy, Hiszpania, Malta, Portugalia"
+    },
+    {
+      id: "west",
+      keyPrefix: "west_europe",
+      label: "Europejczyków z Europy Zachodniej",
+      examples: "np. Niemcy, Francja, Holandia, Belgia"
+    },
+    {
+      id: "east",
+      keyPrefix: "east_europe",
+      label: "Europejczyków z Europy Wschodniej",
+      examples: "np. Ukraina, Czechy, Węgry, Rumunia"
+    }
   ];
 
   const selectedTrialNumberSet = Array.isArray(settings.selectedTrialNumbers) && settings.selectedTrialNumbers.length
@@ -41,8 +79,10 @@
     .sort((a, b) => a.trialNumber - b.trialNumber)
     .filter(card => !selectedTrialNumberSet || selectedTrialNumberSet.has(card.trialNumber));
 
-  const activeCards = availableCards
-    .slice(0, Math.min(settings.totalCards || availableCards.length, availableCards.length));
+  const activeCards = availableCards.slice(
+    0,
+    Math.min(settings.totalCards || availableCards.length, availableCards.length)
+  );
 
   const totalTrials = activeCards.length;
   const ruleNames = { C: "Color", S: "Shape", N: "Number" };
@@ -52,8 +92,21 @@
   function randomSubjectId(length = 15) {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     let out = "";
-    crypto.getRandomValues(new Uint32Array(length)).forEach(v => { out += chars[v % chars.length]; });
+    const values = new Uint32Array(length);
+    crypto.getRandomValues(values);
+    values.forEach(value => {
+      out += chars[value % chars.length];
+    });
     return out;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   function shapeSVG(shape, color) {
@@ -66,16 +119,43 @@
   function cardSlots(number) {
     return {
       1: [{ x: 50, y: 50, scale: 0.9 }],
-      2: [{ x: 34, y: 30, scale: 0.56 }, { x: 66, y: 70, scale: 0.56 }],
-      3: [{ x: 50, y: 24, scale: 0.5 }, { x: 28, y: 72, scale: 0.5 }, { x: 72, y: 72, scale: 0.5 }],
-      4: [{ x: 30, y: 30, scale: 0.5 }, { x: 70, y: 30, scale: 0.5 }, { x: 30, y: 70, scale: 0.5 }, { x: 70, y: 70, scale: 0.5 }]
-    }[number];
+      2: [
+        { x: 34, y: 30, scale: 0.56 },
+        { x: 66, y: 70, scale: 0.56 }
+      ],
+      3: [
+        { x: 50, y: 24, scale: 0.5 },
+        { x: 28, y: 72, scale: 0.5 },
+        { x: 72, y: 72, scale: 0.5 }
+      ],
+      4: [
+        { x: 30, y: 30, scale: 0.5 },
+        { x: 70, y: 30, scale: 0.5 },
+        { x: 30, y: 70, scale: 0.5 },
+        { x: 70, y: 70, scale: 0.5 }
+      ]
+    }[number] || [{ x: 50, y: 50, scale: 0.9 }];
   }
 
   function renderCardSVG(card) {
+    if (!card) return "";
+
     const slots = cardSlots(card.number);
-    const shapes = slots.map(({ x, y, scale }) => `<g transform="translate(${x} ${y}) scale(${scale}) translate(-50 -50)">${shapeSVG(card.shape, card.color)}</g>`).join("");
-    return `<svg viewBox="0 0 100 100" class="card-svg" aria-label="${card.number} ${card.color} ${card.shape}${card.number > 1 ? 's' : ''}">${shapes}</svg>`;
+    const shapes = slots
+      .map(({ x, y, scale }) => `
+        <g transform="translate(${x} ${y}) scale(${scale}) translate(-50 -50)">
+          ${shapeSVG(card.shape, card.color)}
+        </g>
+      `)
+      .join("");
+
+    const plural = card.number > 1 ? "s" : "";
+
+    return `
+      <svg viewBox="0 0 100 100" class="card-svg" aria-label="${card.number} ${card.color} ${card.shape}${plural}">
+        ${shapes}
+      </svg>
+    `;
   }
 
   function computeAppliedRule(choice, target) {
@@ -91,12 +171,6 @@
     return !src.split("").some(ch => restricted.indexOf(ch) === -1);
   }
 
-  function csvEscape(value) {
-    if (value === null || value === undefined) return "";
-    const s = String(value);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }
-
   function buildSheetsFields(payload) {
     return new URLSearchParams({
       source: "card_sorting",
@@ -108,8 +182,8 @@
       condition: payload.condition || "",
       sessionCreatedAt: payload.sessionCreatedAt || "",
       consentGiven: payload.consent && payload.consent.given ? "1" : "0",
-      totalTrials: String(payload.summary && payload.summary.STAT_nr_of_trials || 0),
-      categoriesAchieved: String(payload.summary && payload.summary.STAT_category_achieved || 0),
+      totalTrials: String((payload.summary && payload.summary.STAT_nr_of_trials) || 0),
+      categoriesAchieved: String((payload.summary && payload.summary.STAT_category_achieved) || 0),
       responseData: JSON.stringify(payload)
     });
   }
@@ -149,9 +223,10 @@
       } catch (fallbackError) {
         return {
           ok: false,
-          message: fallbackError && fallbackError.message
-            ? fallbackError.message
-            : (error && error.message ? error.message : "Save failed.")
+          message:
+            (fallbackError && fallbackError.message) ||
+            (error && error.message) ||
+            "Save failed."
         };
       }
     }
@@ -200,7 +275,7 @@
   }
 
   function nextTrainingTarget() {
-    return trainingCards[state.trainingIndex];
+    return trainingCards[state.trainingIndex] || null;
   }
 
   function completedCategoriesForTrial(trialIndex) {
@@ -415,7 +490,7 @@
     const welcomeTitle = settings.language === "pl" ? "Sortowanie kart" : t().welcome;
     const welcomeParagraphs = settings.language === "pl"
       ? [
-          "W tym zadaniu u góry ekranu zobaczysz cztery karty. Różnią się one liczbą, kolorem i kształtem.",
+          "Na górze ekranu znajdują się cztery karty. Różnią się one kształtem, kolorem oraz liczbą przedstawionych elementów.",
           "Niżej będzie pojawiać się nowa karta. Twoim zadaniem jest zdecydować, do której karty u góry ona pasuje.",
           "Przed rozpoczęciem właściwego eksperymentu zostaną przeprowadzone trzy próby treningowe, których celem będzie zapoznanie się z przebiegiem zadania."
         ]
@@ -423,8 +498,8 @@
 
     app.innerHTML = `
       <div class="screen"><div class="panel center">
-        <h1>${welcomeTitle}</h1>
-        ${welcomeParagraphs.map(text => `<p>${text}</p>`).join("")}
+        <h1>${escapeHtml(welcomeTitle)}</h1>
+        ${welcomeParagraphs.map(text => `<p>${escapeHtml(text)}</p>`).join("")}
         <div class="button-row center-row">
           <button id="welcome-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
           <button id="start-btn">${uiText("Dalej", "Continue")}</button>
@@ -471,6 +546,15 @@
     const app = document.getElementById("app");
     app.className = "";
 
+    if (!target) {
+      app.innerHTML = `
+        <div class="screen"><div class="panel center">
+          <h2>Błąd konfiguracji</h2>
+          <p>Brak kart do wyświetlenia. Sprawdź plik cards.js oraz settings.selectedTrialNumbers / settings.totalCards.</p>
+        </div></div>`;
+      return;
+    }
+
     const isTraining = mode === "training";
     const metaLabel = isTraining
       ? `${uiText("Próba treningowa", "Practice trial")} <strong>${state.trainingIndex + 1}</strong> ${t().ofLabel} <strong>${trainingCards.length}</strong>`
@@ -497,8 +581,8 @@
       </div></div>`;
 
     if (!feedbackClass) {
-      document.querySelectorAll(".reference-card").forEach(btn => {
-        btn.addEventListener("click", () => handleChoice(Number(btn.dataset.choice)));
+      document.querySelectorAll(".reference-card").forEach(button => {
+        button.addEventListener("click", () => handleChoice(Number(button.dataset.choice)));
       });
     }
   }
@@ -517,6 +601,8 @@
     syncMainRuleState();
 
     const target = nextTarget();
+    if (!target) return;
+
     const rt = Math.round(performance.now() - state.startedAt);
     const correctCard = target[ruleColumnNames[state.currentRule]];
     const correct = choice === correctCard;
@@ -605,6 +691,8 @@
 
   function handleTrainingChoice(choice) {
     const target = nextTrainingTarget();
+    if (!target) return;
+
     const correct = choice === target.correctChoice;
 
     renderTask(target, correct ? t().correct : t().wrong, correct ? "correct" : "wrong", choice, "training");
@@ -622,12 +710,12 @@
 
   function buildSummary() {
     const n = state.trials.length;
-    const correctN = state.trials.filter(r => r.correct).length;
+    const correctN = state.trials.filter(row => row.correct).length;
     const errorsN = n - correctN;
-    const persRespN = state.trials.filter(r => r.perseverative_response === 1).length;
-    const persErrN = state.trials.filter(r => r.perseverative_error === 1).length;
-    const ftmN = state.trials.filter(r => r.failure_to_maintain === 1).length;
-    const firstCatRow = state.trials.find(r => r.number_of_rule === 1 && r.category_completed >= 1);
+    const persRespN = state.trials.filter(row => row.perseverative_response === 1).length;
+    const persErrN = state.trials.filter(row => row.perseverative_error === 1).length;
+    const ftmN = state.trials.filter(row => row.failure_to_maintain === 1).length;
+    const firstCatRow = state.trials.find(row => row.number_of_rule === 1 && row.category_completed >= 1);
 
     return {
       STAT_nr_of_trials: n,
@@ -723,7 +811,7 @@
       if (result.ok && result.confirmed) {
         saveStatus.textContent = "Dane zostały zapisane, dziękuję za udział!";
       } else if (result.ok) {
-        saveStatus.textContent = "Żądanie zapisu zostało wysłane. Proszę chwilę poczekać.";
+        saveStatus.textContent = "Żądanie zapisu zostało wysłane. Dziękuję za udział!";
       } else if (result.skipped) {
         saveStatus.textContent = "Brak adresu zapisu do Google Sheets.";
       } else {
@@ -735,7 +823,7 @@
   function renderArticleScreen() {
     const app = document.getElementById("app");
     const article = settings.articleContent || { headline: "", body: "" };
-    const articleHeadline = article.headline ? `<h3>${article.headline}</h3>` : "";
+    const articleHeadline = article.headline ? `<h3>${escapeHtml(article.headline)}</h3>` : "";
 
     app.className = "";
     state.phase = "article";
@@ -745,7 +833,7 @@
         <h2 class="center">Przeczytaj uważnie tekst</h2>
         <div class="article-text-wrap">
           ${articleHeadline}
-          <p>${article.body}</p>
+          <p>${escapeHtml(article.body)}</p>
         </div>
         <div class="button-row center-row">
           <button id="article-back-btn" type="button">${uiText("Cofnij", "Back")}</button>
@@ -790,8 +878,8 @@
 
     app.innerHTML = `
       <div class="screen trait-screen"><div class="panel trait-panel">
-        <h2 class="center">${title}</h2>
-        <p class="center trait-subtitle">${subtitle}</p>
+        <h2 class="center">${escapeHtml(title)}</h2>
+        <p class="center trait-subtitle">${escapeHtml(subtitle)}</p>
 
         <div class="trait-scale-guide" aria-hidden="true">
           <div class="trait-scale-guide-edge">
@@ -818,10 +906,10 @@
             <tbody>
               ${polishTraits.map(trait => `
                 <tr>
-                  <td>${trait.label}</td>
+                  <td>${escapeHtml(trait.label)}</td>
                   ${scales.map(value => `
                     <td class="trait-score-cell">
-                      <label class="trait-radio-label" aria-label="${trait.label}: ${value}">
+                      <label class="trait-radio-label" aria-label="${escapeHtml(trait.label)}: ${value}">
                         <input
                           type="radio"
                           name="trait-${trait.id}"
@@ -840,7 +928,7 @@
 
         <div id="trait-error" class="form-error" role="alert" aria-live="polite"></div>
 
-        <div class="button-row center-row">
+        <div class="button-row center-row sticky-next-row">
           <button id="trait-next-btn">${nextLabel || uiText("Dalej", "Continue")}</button>
         </div>
       </div></div>`;
@@ -958,6 +1046,18 @@
   }
 
   window.addEventListener("DOMContentLoaded", () => {
+    if (!document.getElementById("app")) {
+      throw new Error("Missing #app element in HTML.");
+    }
+
+    if (!Array.isArray(settings.ruleSequence) || !settings.ruleSequence.length) {
+      throw new Error("settings.ruleSequence must be a non-empty array, e.g. ['C', 'S', 'N'].");
+    }
+
+    if (!settings.trialsPerRule || !settings.maxCategories) {
+      throw new Error("settings.trialsPerRule and settings.maxCategories are required.");
+    }
+
     renderConsentPage();
   });
 })();
