@@ -585,138 +585,83 @@ button {
 
 @media (max-width: 820px) {
   #app {
-    padding: 12px;
-  }
-
-  .reference-row {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
-  }
-
-  .reference-card {
-    min-height: 150px;
-  }
-
-  .target-card {
-    width: 150px;
-    min-height: 150px;
-  }
-
-  .start-panel {
-    padding: 20px 18px 24px;
-  }
-
-  .consent-box {
-    padding: 14px;
-  }
-
-  #app.consent-mode {
-    padding: 12px;
-  }
-
-  .brand-row {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 6px;
-    margin: 0 auto 8px;
-  }
-
-  .brand-logo {
-    width: 92px;
-  }
-
-  .brand-name {
-    font-size: 20px;
-  }
-
-  .hero-meta {
-    font-size: 14px;
-    line-height: 1.45;
-    margin-bottom: 16px;
-  }
-
-  .consent-frame-wrap {
-    padding: 16px;
-    border-radius: 12px;
-  }
-
-  .consent-frame-scroll {
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-  }
-
-  .consent-inner-box {
-    padding: 16px;
-  }
-
-  .consent-doc-kicker {
-    font-size: 17px;
-  }
-
-  .consent-doc-title {
-    font-size: 21px;
-    margin-bottom: 16px;
-  }
-
-  .consent-doc p {
-    font-size: 15px;
-    line-height: 1.45;
-    margin-bottom: 16px;
-  }
-
-  .consent-check-large {
-    margin-top: 16px;
-    font-size: 15px;
-  }
-
-  .consent-button-row {
-    margin-top: 12px;
-  }
-
-  .trait-screen {
-    width: 100%;
+    align-items: flex-start;
+    padding: 10px;
+    overflow-x: hidden;
   }
 
   .trait-panel {
-    padding: 18px 12px 20px;
+    width: 100%;
+    max-width: 100%;
+    padding: 18px 10px 24px;
     border-radius: 18px;
+  }
+
+  .trait-panel h2 {
+    font-size: 24px;
+    line-height: 1.2;
   }
 
   .trait-subtitle {
     font-size: 16px;
+    line-height: 1.45;
   }
 
-  .trait-scale-guide {
-    gap: 10px;
-    margin-bottom: 16px;
-    align-items: flex-start;
+  .trait-table-wrap {
+    width: 100%;
+    overflow-x: visible;
   }
 
-  .trait-scale-guide-line {
+  .trait-table,
+  .trait-table thead,
+  .trait-table tbody,
+  .trait-table tr,
+  .trait-table th,
+  .trait-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .trait-table thead {
     display: none;
   }
 
-  .trait-scale-guide-edge {
-    min-width: 0;
-    flex: 1;
+  .trait-table tr {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #d9d0bf;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 12px;
   }
 
-  .trait-scale-guide-edge strong {
+  .trait-table td:first-child {
     font-size: 18px;
+    font-weight: 700;
+    text-align: left;
+    margin-bottom: 10px;
   }
 
-  .trait-scale-guide-edge span {
-    font-size: 11px;
-    letter-spacing: 0.05em;
-  }
-
-  .trait-mobile-label {
-    font-size: 16px;
+  .trait-score-cell {
+    display: inline-flex !important;
+    width: auto !important;
+    margin: 3px;
   }
 
   .trait-radio-pill {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .sticky-next-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    background: linear-gradient(180deg, rgba(236, 230, 218, 0), #ece6da 35%);
+    padding: 16px 0 8px;
+  }
+
+  #trait-next-btn {
+    width: min(260px, 90%);
   }
 }
