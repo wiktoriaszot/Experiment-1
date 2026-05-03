@@ -82,3 +82,7 @@ async function assignConditionFromServer(email) {
 
   return data.condition;
 }
+
+window.settings = settings;
+window.assignConditionFromServer = assignConditionFromServer;
+}
