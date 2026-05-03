@@ -89,3 +89,4 @@ const uniqueCards = new Set(cards.map(card => `${card.color}|${card.shape}|${car
 if (cards.length !== expectedDeckSize || uniqueCards.size !== expectedDeckSize) {
   throw new Error("Invalid WCST card deck: expected 64 unique cards.");
 }
+window.cards = cards;
