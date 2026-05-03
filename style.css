@@ -151,11 +151,13 @@ button {
 }
 
 .start-screen {
-  width: min(1180px, 100%);
+  width: min(1240px, 100%);
 }
 
 .start-panel {
-  padding: 26px 34px 30px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .start-title {
@@ -358,98 +360,29 @@ button {
   box-shadow: inset 0 1px 2px rgba(33, 38, 45, 0.12);
 }
 
-.trait-table-wrap {
-  overflow-x: auto;
-  background: rgba(255, 255, 255, 0.9);
+.trait-mobile-list {
+  display: grid;
+  gap: 14px;
+}
+
+.trait-mobile-card {
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid #d9d0bf;
-  border-radius: 20px;
-  padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  padding: 14px;
 }
 
-.trait-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 820px;
-  table-layout: fixed;
-}
-
-.trait-table th,
-.trait-table td {
-  border-bottom: 1px solid #e7ded0;
-  padding: 8px 8px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-.trait-table th:first-child,
-.trait-table td:first-child {
-  width: 340px;
-  text-align: left;
+.trait-mobile-label {
   font-weight: 700;
-  background: rgba(246, 241, 232, 0.95);
-  padding: 16px 14px;
-}
-
-.trait-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #f1ebdf;
-  color: #314155;
   font-size: 18px;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  margin-bottom: 12px;
+  text-align: left;
 }
 
-.trait-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.trait-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.trait-table tbody tr:hover td:first-child {
-  background: #f2ead9;
-}
-
-.trait-table tbody tr:has(input:checked) td:first-child {
-  background: #e9dcc2;
-  color: #182534;
-}
-
-.trait-score-cell {
-  background: rgba(255, 255, 255, 0.58);
-}
-
-.trait-score-cell:nth-child(2) {
-  background: rgba(210, 226, 243, 0.42);
-}
-
-.trait-score-cell:nth-child(3) {
-  background: rgba(222, 233, 245, 0.42);
-}
-
-.trait-score-cell:nth-child(4) {
-  background: rgba(235, 239, 244, 0.42);
-}
-
-.trait-score-cell:nth-child(5) {
-  background: rgba(241, 236, 229, 0.42);
-}
-
-.trait-score-cell:nth-child(6) {
-  background: rgba(243, 224, 202, 0.42);
-}
-
-.trait-score-cell:nth-child(7) {
-  background: rgba(242, 211, 177, 0.42);
-}
-
-.trait-score-cell:nth-child(8) {
-  background: rgba(237, 193, 140, 0.42);
+.trait-mobile-options {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
 }
 
 .trait-radio-label {
@@ -457,7 +390,7 @@ button {
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: 50px;
+  min-height: auto;
   cursor: pointer;
 }
 
@@ -509,10 +442,6 @@ button {
   box-shadow: 0 10px 18px rgba(30, 95, 191, 0.3);
 }
 
-.trait-table tbody tr:has(input:checked) .trait-score-cell:has(input:checked) {
-  background: rgba(44, 116, 211, 0.12);
-}
-
 #trait-next-btn {
   min-width: 132px;
   padding: 14px 24px;
@@ -521,21 +450,19 @@ button {
   box-shadow: 0 10px 22px rgba(33, 134, 255, 0.18);
 }
 
+.sticky-next-row {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(236, 230, 218, 0), #ece6da 30%);
+  padding-top: 18px;
+  padding-bottom: 4px;
+}
+
 #app.consent-mode {
   align-items: flex-start;
   justify-content: center;
   padding-top: 8px;
   padding-bottom: 10px;
-}
-
-.start-screen {
-  width: min(1240px, 100%);
-}
-
-.start-panel {
-  background: transparent;
-  border: none;
-  padding: 0;
 }
 
 .consent-look {
@@ -746,22 +673,12 @@ button {
     margin-top: 12px;
   }
 
-  .trait-table {
-    min-width: 720px;
-  }
-
-  .trait-table th,
-  .trait-table td {
-    padding: 8px 6px;
-  }
-
-  .trait-table th:first-child,
-  .trait-table td:first-child {
-    width: 250px;
+  .trait-screen {
+    width: 100%;
   }
 
   .trait-panel {
-    padding: 20px 16px 22px;
+    padding: 18px 12px 20px;
     border-radius: 18px;
   }
 
@@ -772,10 +689,16 @@ button {
   .trait-scale-guide {
     gap: 10px;
     margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .trait-scale-guide-line {
+    display: none;
   }
 
   .trait-scale-guide-edge {
-    min-width: 88px;
+    min-width: 0;
+    flex: 1;
   }
 
   .trait-scale-guide-edge strong {
@@ -787,14 +710,13 @@ button {
     letter-spacing: 0.05em;
   }
 
-  .trait-table-wrap {
-    border-radius: 16px;
-    padding: 8px;
+  .trait-mobile-label {
+    font-size: 16px;
   }
 
   .trait-radio-pill {
-    width: 38px;
-    height: 38px;
-    font-size: 15px;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
   }
 }
