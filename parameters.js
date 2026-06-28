@@ -21,7 +21,7 @@ const UI_LANG = window.UI_LANG === "pl" ? "pl" : "en";
 const conditionConfig = window.experimentConditionConfig || {};
 const conditionArticles = conditionConfig.conditionArticles || fallbackConditionArticles;
 
-const totalCards = 48;
+const totalCards = 1;
 const maxCategories = 6;
 
 const settings = {
